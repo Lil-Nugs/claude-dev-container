@@ -12,6 +12,20 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## 🚨 Protected Branch Policy 🚨
+
+**IMPORTANT**: The `main` branch is **PROTECTED**. You cannot push directly to main.
+
+**Required Workflow:**
+1. Create a feature branch for your work: `git checkout -b feature/your-branch-name`
+2. Make your changes and commit to your branch
+3. Push your feature branch: `git push -u origin feature/your-branch-name`
+4. Create a Pull Request to merge your branch into `main`
+
+**Branch Naming:**
+- Features: `feature/description` or `beads-xxx-description`
+- Fixes: `fix/description`
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
