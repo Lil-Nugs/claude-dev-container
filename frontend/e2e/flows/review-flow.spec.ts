@@ -179,10 +179,10 @@ test.describe("Review Flow", () => {
     const workButton = page.locator('[data-testid="action-work"]');
     const pushButton = page.locator('[data-testid="action-push-pr"]');
 
-    if (await workButton.isVisible()) {
+    if (await workButton.isVisible({ timeout: 5000 })) {
       await expect(workButton).toBeDisabled();
     }
-    if (await pushButton.isVisible()) {
+    if (await pushButton.isVisible({ timeout: 5000 })) {
       await expect(pushButton).toBeDisabled();
     }
   });

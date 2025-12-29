@@ -67,6 +67,9 @@ test.describe("Bead Listing", () => {
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
+    // Wait for bead list to load
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
+
     // Should show all beads
     const beadItems = page.locator('[data-testid="bead-item"]');
     await expect(beadItems).toHaveCount(3);
@@ -95,7 +98,10 @@ test.describe("Bead Listing", () => {
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
-    // Wait for beads and click first one
+    // Wait for bead list to load
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
+
+    // Click first bead
     await page.click('[data-testid="bead-item"]:first-child');
 
     // Should show bead details panel or inline details
@@ -156,8 +162,10 @@ test.describe("Bead Listing", () => {
 
     // If there's a status filter, click it
     const statusFilter = page.locator('[data-testid="filter-status"]');
-    if (await statusFilter.isVisible()) {
+    if (await statusFilter.isVisible({ timeout: 5000 })) {
       await statusFilter.click();
+      // Wait for dropdown option to be visible
+      await expect(page.locator('text=In Progress')).toBeVisible();
       await page.click('text=In Progress');
 
       // Should only show in_progress beads
@@ -178,11 +186,16 @@ test.describe("Bead Listing", () => {
 
     // Work button should be disabled initially
     const workButton = page.locator('[data-testid="action-work"]');
-    if (await workButton.isVisible()) {
+    if (await workButton.isVisible({ timeout: 5000 })) {
       await expect(workButton).toBeDisabled();
 
       // Select a bead
       await page.click('[data-testid="bead-item"]:first-child');
+
+      // Wait for bead to be selected (has selected styling)
+      await expect(
+        page.locator('[data-testid="bead-item"]').first()
+      ).toHaveClass(/bg-blue-50|selected/);
 
       // Now work button should be enabled
       await expect(workButton).toBeEnabled();

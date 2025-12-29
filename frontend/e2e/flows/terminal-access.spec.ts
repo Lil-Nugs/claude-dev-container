@@ -79,6 +79,9 @@ test.describe("Terminal Access", () => {
   });
 
   test("should copy command to clipboard", async ({ page, context }) => {
+    // Skip in CI - clipboard permissions don't work reliably in headless mode
+    test.skip(!!process.env.CI, "Clipboard not available in headless CI");
+
     // Grant clipboard permissions
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
