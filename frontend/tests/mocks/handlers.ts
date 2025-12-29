@@ -46,21 +46,21 @@ const mockBeads: Record<string, Bead[]> = {
 };
 
 const mockExecutionResult: ExecutionResult = {
-  output: "Command executed successfully",
+  output: "Execution completed successfully",
   state: "completed",
   exit_code: 0,
 };
 
 const mockProgressInfo: ProgressInfo = {
-  running: false,
-  output: "Output text here",
-  recent: "Recent output",
-  bytes: 1024,
+  running: true,
+  output: "Working on task...",
+  recent: "Current step...",
+  bytes: 2048,
 };
 
 const mockAttachInfo: AttachInfo = {
-  container_id: "container-123",
-  command: "docker exec -it container-123 /bin/bash",
+  container_id: "abc123def456",
+  command: "docker exec -it abc123def456 /bin/bash",
 };
 
 const mockPushPRResponse: PushPRResponse = {

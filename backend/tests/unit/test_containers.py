@@ -182,6 +182,68 @@ class TestContainerService:
         if claude_path in volumes:
             assert volumes[claude_path]["mode"] == "ro"
 
+    def test_get_volume_mounts_includes_claude_config_if_exists(
+        self, service: ContainerService, tmp_path: Path
+    ) -> None:
+        """Volume mounts include ~/.claude config directory if it exists."""
+        home = Path.home()
+        claude_config = home / ".claude"
+
+        with patch.object(Path, "exists", side_effect=lambda: True):
+            volumes = service._get_volume_mounts("/path/to/project")
+
+        if str(claude_config) in volumes:
+            assert volumes[str(claude_config)]["bind"] == "/home/claude/.claude"
+            assert volumes[str(claude_config)]["mode"] == "rw"
+
+    def test_get_volume_mounts_includes_gitconfig_if_exists(
+        self, service: ContainerService, tmp_path: Path
+    ) -> None:
+        """Volume mounts include ~/.gitconfig if it exists."""
+        home = Path.home()
+        gitconfig = home / ".gitconfig"
+
+        # Create a mock gitconfig file
+        mock_gitconfig = tmp_path / ".gitconfig"
+        mock_gitconfig.touch()
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            volumes = service._get_volume_mounts("/path/to/project")
+
+        assert str(mock_gitconfig) in volumes
+        assert volumes[str(mock_gitconfig)]["bind"] == "/home/claude/.gitconfig"
+        assert volumes[str(mock_gitconfig)]["mode"] == "ro"
+
+    def test_get_volume_mounts_includes_ssh_if_exists(
+        self, service: ContainerService, tmp_path: Path
+    ) -> None:
+        """Volume mounts include ~/.ssh directory if it exists."""
+        # Create a mock .ssh directory
+        mock_ssh = tmp_path / ".ssh"
+        mock_ssh.mkdir()
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            volumes = service._get_volume_mounts("/path/to/project")
+
+        assert str(mock_ssh) in volumes
+        assert volumes[str(mock_ssh)]["bind"] == "/home/claude/.ssh"
+        assert volumes[str(mock_ssh)]["mode"] == "ro"
+
+    def test_get_volume_mounts_skips_missing_optional_mounts(
+        self, service: ContainerService, tmp_path: Path
+    ) -> None:
+        """Volume mounts skip optional files/directories that don't exist."""
+        # Use empty tmp_path as home - nothing exists
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            volumes = service._get_volume_mounts("/path/to/project")
+
+        # Should only have workspace mount
+        assert "/path/to/project" in volumes
+        # Optional mounts should not be present
+        assert str(tmp_path / ".gitconfig") not in volumes
+        assert str(tmp_path / ".ssh") not in volumes
+        assert str(tmp_path / ".claude") not in volumes
+
     # =========================================================================
     # Test exec_claude
     # =========================================================================
