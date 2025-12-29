@@ -1,6 +1,10 @@
-# Backend Implementation Plan
+# Backend Implementation Plan (Full Orchestration)
+
+> **Note**: This is the **full orchestration** backend plan. For MVP, see **SIMPLIFIED_PLAN.md**.
+> Use this document as reference when adding Tier 2/3 features from FUTURE_ENHANCEMENTS.md.
 
 **Stack**: FastAPI + Docker SDK + GitPython + Beads CLI
+**Status**: Reference document (Future)
 
 ---
 

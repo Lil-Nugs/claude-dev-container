@@ -1,6 +1,29 @@
 # Agent Implementation Challenges & Solutions
 
-**Status**: Critical issues that MUST be addressed before implementation
+> **Note**: Most of these challenges apply to **full orchestration** (Tier 2/3 features).
+> For MVP, the simplified approach avoids most issues through manual intervention.
+> Use this as reference when adding automation features from FUTURE_ENHANCEMENTS.md.
+
+**Status**: Reference document (Future tiers)
+
+## MVP vs Full Orchestration
+
+| Challenge | MVP Approach | Full Orchestration |
+|-----------|--------------|-------------------|
+| §1 Workflow Instructions | Simple prompt template | Enhanced ContextBuilder |
+| §2 Context Enhancement | Not needed (Claude explores) | ContextBuilder service |
+| §3 Review Parsing | Human reads output | JSON + fallback parsing |
+| §4 Error Recovery | Drop into terminal | Automated pause/resume |
+| §5 Git Conflicts | One execution at a time | Distributed locking |
+| §6 Git Credentials | Mount SSH keys (MVP) | Same |
+| §7 Timeout | Manual cancel | 6-hour auto-timeout |
+| §8 Dependency Check | Human checks `bd ready` | Automated validation |
+| §9 Quality Gates | Human verifies tests | Automated checks |
+| §10 Claude CLI State | Per-container config (MVP) | Same |
+| §11 Prompt Injection | Low risk (trusted user) | Full sanitization |
+| §12 Container Drift | Manual refresh | Auto-refresh triggers |
+
+---
 
 ## Overview
 

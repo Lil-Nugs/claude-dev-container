@@ -1,6 +1,9 @@
-# Agent Execution Workflow
+# Agent Execution Workflow (Full Orchestration)
 
-**Status**: Clarified and approved
+> **Note**: This describes the **full orchestration** workflow with state machines and automated recovery.
+> For MVP, use simple prompts and manual intervention. See **SIMPLIFIED_PLAN.md**.
+
+**Status**: Reference document (Future tiers)
 
 ---
 
@@ -9,6 +12,8 @@
 Two agent types with distinct responsibilities:
 1. **Work Agent**: Executes individual beads autonomously in containers
 2. **Review Agent**: Fresh context reviews committed work, creates new beads for issues
+
+**MVP Simplification**: Both use simple prompt templates. You watch output and intervene manually.
 
 ---
 

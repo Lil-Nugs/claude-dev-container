@@ -1,6 +1,10 @@
-# Frontend Implementation Plan
+# Frontend Implementation Plan (Full Orchestration)
+
+> **Note**: This is the **full orchestration** frontend plan. For MVP, see **SIMPLIFIED_PLAN.md**.
+> Use this document as reference when adding Tier 2/3 features from FUTURE_ENHANCEMENTS.md.
 
 **Stack**: React + TypeScript + Vite + Tailwind CSS + Zustand
+**Status**: Reference document (Future)
 
 ---
 
