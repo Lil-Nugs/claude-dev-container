@@ -129,7 +129,9 @@ After creating beads, provide a summary:
 
 ### 7. Create PR and Return to Main (if ready)
 
-If the review passes with no critical issues:
+**IMPORTANT**: If this command was invoked with `--no-pr` or `--batch` argument, SKIP this entire step. Just ensure changes are committed locally and continue. This is used for batch/overnight workflows where one PR is created at the end.
+
+If the review passes with no critical issues AND no `--no-pr`/`--batch` flag:
 
 ```bash
 # Push the branch and create PR
