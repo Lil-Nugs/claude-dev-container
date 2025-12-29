@@ -10,88 +10,115 @@ This document identifies challenges specific to having AI agents (Claude) execut
 
 ## Critical Issues
 
-### 1. The Meta-Problem: Claude Controlling Claude ⚠️
+### 1. Workflow Instructions & Stopping Conditions ⚠️
 
-**Issue**: The system has Claude (the orchestrator) executing Claude CLI (the worker) inside containers.
+**Issue**: Inner Claude CLI has access to all project files (mounted repository), but needs **clear instructions** about:
+- What success looks like (when to stop)
+- Workflow expectations (tests, commits, error handling)
+- Constraint boundaries (work autonomously, specific formats)
 
-**Problems**:
-- Inner Claude has no context about outer system's goals
-- Conflicting instructions between orchestrator and worker
-- No way to align inner agent with bead objectives
-- Inner Claude might ask questions, refuse tasks, or misinterpret goals
+**Not a Context Problem**: The agent has full file access - this is about **orchestration protocol**.
 
-**Solution**:
+**Clarified Workflow**:
+
+**Work Agent (per bead)**:
+1. Implement the required changes
+2. Create/update tests (always, even if no test suite exists)
+3. Run test suite
+4. If tests fail: Try to fix once, then run again
+   - Still failing → Create "tests failing" bead with details → STOP
+5. If tests pass: Commit with format `"Bead {bead_id}: {title}"` and push
+6. If git push fails (conflict):
+   - Try `git pull --rebase` then push again
+   - Still failing → Create "merge conflict" bead → STOP
+7. If blocked/confused: Output `"BLOCKED: [reason]"` → STOP
+
+**Review Agent (separate button)**:
+- Fresh context reviews committed changes
+- Creates beads for any issues found
+- Decides if PR should be opened
+
+**Stopping Conditions**:
+- ✅ **SUCCESS**: Tests pass AND committed AND pushed
+- 🛑 **STOP**: Tests fail after one retry → create bead
+- 🛑 **STOP**: Git push fails after rebase → create bead
+- 🛑 **STOP**: Agent outputs "BLOCKED:" → create bead
+- 🛑 **STOP**: Timeout (6 hours) with no commits → create timeout bead
+
+**Status Updates**: Orchestrator detects success/failure and updates bead status (agent doesn't update status itself)
+
+**Solution - Enhanced Prompt Template**:
 ```python
-# Enhanced prompt structure
 def build_execution_prompt(bead: Bead, project: Project, context: str) -> str:
     return f"""
-You are executing work in an isolated container for a project.
+=== SYSTEM INSTRUCTIONS ===
+You are working on a task in an isolated container.
 
-PROJECT CONTEXT:
-{project.readme_summary}
-{project.tech_stack}
+TASK: Bead #{bead.id} - {bead.title}
+{bead.description}
 
-TASK (Bead #{bead.id}):
-Title: {bead.title}
-Description: {bead.description}
-Type: {bead.type}
-Priority: {bead.priority}
+PROJECT: {project.name}
+Tech Stack: {project.tech_stack}
+Test Command: {project.test_command}
 
-PREVIOUS ATTEMPTS:
-{get_previous_execution_logs(bead.id)}
+=== WORKFLOW ===
+1. Implement the required changes
+2. Create/update tests (always create test suite if none exists)
+3. Run test suite: {project.test_command}
+4. If tests fail: Fix and retry ONCE
+   - Still failing? Output test failures and STOP
+5. If tests pass:
+   - Commit with message: "Bead {bead.id}: {bead.title}"
+   - Push to remote
+   - If push fails: try 'git pull --rebase' then push
+   - If still fails: output conflict details and STOP
 
-CURRENT STATE:
-{get_git_status_summary()}
+=== STOPPING CONDITIONS ===
+✅ SUCCESS: Tests pass AND changes committed AND pushed
+🛑 BLOCKED: Output "BLOCKED: [reason]" if you cannot proceed
 
-CONSTRAINTS:
-- Work autonomously - no human in the loop
-- Run tests before marking complete
-- Commit changes with message: "Bead {bead.id}: {bead.title}"
-- If blocked, output: BLOCKED: [reason] and exit
+=== CONSTRAINTS ===
+- Work autonomously (no human in the loop)
+- One retry attempt for test failures
+- One rebase attempt for push conflicts
+- Output progress clearly as you work
+- Timeout: 6 hours
 
-ADDITIONAL CONTEXT:
 {context}
 
-Begin work now. Output your progress clearly.
+Begin work now.
 """
 ```
 
-**Key additions**:
-- Project context (README, tech stack)
-- Previous execution history
-- Clear constraints and expectations
+**Key Points**:
+- Clear step-by-step workflow
+- Explicit retry limits (one attempt)
 - Structured blocking signal
-- Git workflow instructions
+- Fresh agent context for review (no looping)
 
 ---
 
-### 2. Context Starvation
+### 2. Context Enhancement (Optional)
 
-**Issue**: Fresh Claude sessions have zero context about:
-- Project structure and conventions
-- Previous work attempts
-- Why previous attempts failed
-- Test requirements
-- Coding standards
+**Note**: Agent has full file access to repository. This is about **enriching the initial prompt** with helpful metadata.
 
-**Current plan**:
+**Optional Enhancements**: Can be added to initial prompt to help agent orient faster:
+- Project README summary (first 50 lines)
+- Detected tech stack (from package.json, requirements.txt, etc.)
+- Test command detection (npm test, pytest, etc.)
+- Recent commit history (last 10 commits)
+- Bead dependencies
+
+**Implementation** (See BACKEND_PLAN.md `context_builder.py`):
 ```python
-prompt = f"{bead.title}\n{bead.description}"  # TOO MINIMAL
-```
+class ContextBuilder:
+    """Build helpful metadata for agent execution"""
 
-**Solution**: Context injection system
-
-```python
-class ExecutionContext:
-    """Build comprehensive context for agent execution"""
-
-    @staticmethod
-    async def build(project: Project, bead: Bead) -> dict:
+    async def build_execution_context(self, project: Project, bead: Bead) -> dict:
         return {
             "project": {
                 "name": project.name,
-                "description": await read_file(f"{project.path}/README.md", max_lines=50),
-                "structure": await get_project_structure(project.path),
+                "readme_excerpt": await read_file(f"{project.path}/README.md", max_lines=50),
                 "tech_stack": await detect_tech_stack(project.path),
                 "test_command": await detect_test_command(project.path),
             },
@@ -100,21 +127,13 @@ class ExecutionContext:
                 "title": bead.title,
                 "description": bead.description,
                 "type": bead.type,
-                "created_at": bead.created_at,
                 "dependencies": await get_bead_dependencies(bead.id),
             },
-            "history": {
-                "previous_attempts": await get_execution_logs(bead.id),
-                "recent_commits": await git_log(project.path, limit=10),
-                "related_beads": await find_related_beads(bead),
-            },
-            "current_state": {
-                "branch": await git_current_branch(project.path),
-                "uncommitted_changes": await git_status(project.path),
-                "test_status": await get_last_test_results(project.path),
-            }
+            "recent_commits": await git_log(project.path, limit=10),
         }
 ```
+
+**Priority**: Medium - Nice to have but not critical (agent can read files itself)
 
 ---
 
@@ -372,18 +391,23 @@ def create_container(project: Project) -> Container:
 
 ---
 
-### 7. Execution Timeout Missing
+### 7. Execution Timeout
 
-**Issue**: No timeout → runaway executions blocking resources
+**Issue**: Need timeout to prevent runaway executions, but must be **long enough** for complex tasks
 
-**Solution**: Timeout + cleanup
+**Decision**: 6 hour timeout (21600 seconds)
+- Allows for complex implementations, dependency installations, large test suites
+- Fallback detection for when agent outputs no "BLOCKED:" signal
+- Creates bead if timeout occurs with no commits
+
+**Solution**: Timeout + cleanup + fallback bead creation
 
 ```python
 async def execute_bead_with_timeout(
     project: Project,
     bead: Bead,
     context: str,
-    timeout: int = 1800  # 30 minutes
+    timeout: int = 21600  # 6 hours
 ) -> ExecutionResult:
     """Execute with timeout and cleanup"""
 
@@ -400,8 +424,8 @@ async def execute_bead_with_timeout(
         # Create timeout bead
         await beads_service.create_bead(
             project.path,
-            title=f"Timeout on {bead.title}",
-            description=f"Execution exceeded {timeout}s. Check for infinite loops or hung processes.",
+            title=f"Timeout investigating {bead.title}",
+            description=f"Execution exceeded {timeout}s ({timeout//3600} hours). Agent may have been stuck or task too complex. Review output logs.",
             type="bug",
             priority=1
         )
@@ -418,12 +442,14 @@ async def execute_bead_with_timeout(
 function ExecutionProgress({ executionId }: Props) {
   const { status, elapsed, timeout } = useExecutionStatus(executionId);
   const remaining = timeout - elapsed;
+  const hours = Math.floor(remaining / 3600);
+  const minutes = Math.floor((remaining % 3600) / 60);
 
   return (
     <div>
       <ProgressBar value={elapsed} max={timeout} />
-      <span>Time remaining: {formatDuration(remaining)}</span>
-      {remaining < 300 && <Warning>Approaching timeout</Warning>}
+      <span>Time remaining: {hours}h {minutes}m</span>
+      {remaining < 600 && <Warning>Approaching timeout (less than 10 min)</Warning>}
     </div>
   );
 }

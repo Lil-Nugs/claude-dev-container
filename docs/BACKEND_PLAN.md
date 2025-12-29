@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     max_concurrent_containers: int = 3
 
     # Execution
-    default_execution_timeout: int = 1800  # 30 minutes
+    default_execution_timeout: int = 21600  # 6 hours
     poll_interval: int = 5  # seconds
 
     # Git
