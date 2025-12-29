@@ -38,7 +38,9 @@ class Project(BaseModel):
     id: str = Field(..., description="Unique project identifier")
     name: str = Field(..., description="Project name")
     path: str = Field(..., description="Absolute path to project")
-    has_beads: bool = Field(default=False, description="Whether project has beads initialized")
+    has_beads: bool = Field(
+        default=False, description="Whether project has beads initialized"
+    )
 
 
 class Bead(BaseModel):
@@ -48,7 +50,9 @@ class Bead(BaseModel):
     title: str = Field(..., description="Bead title")
     status: BeadStatus = Field(..., description="Current status")
     description: Optional[str] = Field(default=None, description="Bead description")
-    priority: int = Field(default=2, description="Priority level (0-4, lower is higher priority)")
+    priority: int = Field(
+        default=2, description="Priority level (0-4, lower is higher priority)"
+    )
     type: BeadType = Field(default=BeadType.task, description="Bead type")
 
 
@@ -79,7 +83,9 @@ class AttachInfo(BaseModel):
 class WorkRequest(BaseModel):
     """Request body for work endpoint."""
 
-    context: Optional[str] = Field(default=None, description="Additional context for the work")
+    context: Optional[str] = Field(
+        default=None, description="Additional context for the work"
+    )
 
 
 class PushPRRequest(BaseModel):
