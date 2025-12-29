@@ -1,3 +1,84 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Mobile-first base styles for PWA */
+@layer base {
+  html {
+    /* Prevent iOS rubber-band scrolling on body */
+    overscroll-behavior: none;
+    /* Prevent text size adjustment on orientation change */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    /* Safe area insets for notched phones */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Minimum touch target size (44px as per Apple HIG) */
+  button,
+  [role="button"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Ensure inputs are large enough for touch */
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
+
+@layer components {
+  /* Touch-friendly button base */
+  .btn-touch {
+    @apply min-h-[44px] min-w-[44px] px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply active:scale-95 touch-manipulation;
+  }
+
+  /* Primary action button */
+  .btn-primary {
+    @apply btn-touch bg-blue-600 text-white;
+    @apply hover:bg-blue-700 active:bg-blue-800;
+    @apply disabled:bg-gray-300 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary action button */
+  .btn-secondary {
+    @apply btn-touch bg-gray-200 text-gray-800;
+    @apply hover:bg-gray-300 active:bg-gray-400;
+    @apply disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed;
+  }
+
+  /* Card component for mobile */
+  .card {
+    @apply bg-white rounded-lg shadow-sm;
+    @apply w-full; /* Full width on mobile */
+  }
+
+  /* Sticky action bar for mobile */
+  .action-bar {
+    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200;
+    @apply px-4 py-3 flex gap-2;
+    @apply pb-[calc(0.75rem+env(safe-area-inset-bottom))]; /* Account for home indicator */
+  }
+}
+
+@layer utilities {
+  /* Safe area utilities */
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Prevent text selection on interactive elements (mobile UX) */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}

@@ -49,6 +49,11 @@ describe("TerminalEmbed", () => {
       );
 
       expect(screen.getByTestId("terminal-modal")).toBeInTheDocument();
+
+      // Wait for async fetch to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.queryByTestId("terminal-loading")).not.toBeInTheDocument();
+      });
     });
 
     it("should have correct accessibility attributes", async () => {
@@ -64,6 +69,11 @@ describe("TerminalEmbed", () => {
       expect(modal).toHaveAttribute("role", "dialog");
       expect(modal).toHaveAttribute("aria-modal", "true");
       expect(modal).toHaveAttribute("aria-labelledby", "terminal-modal-title");
+
+      // Wait for async fetch to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.queryByTestId("terminal-loading")).not.toBeInTheDocument();
+      });
     });
   });
 
@@ -233,6 +243,11 @@ describe("TerminalEmbed", () => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
         "docker exec -it abc123def456 /bin/bash"
       );
+
+      // Wait for copy state update to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.getByTestId("copy-command")).toHaveTextContent(/Copy|Copied!/);
+      });
     });
 
     it("should show 'Copied!' after successful copy", async () => {
@@ -311,6 +326,11 @@ describe("TerminalEmbed", () => {
         />
       );
 
+      // Wait for async fetch to complete first
+      await waitFor(() => {
+        expect(screen.queryByTestId("terminal-loading")).not.toBeInTheDocument();
+      });
+
       fireEvent.click(screen.getByTestId("terminal-close"));
 
       expect(onClose).toHaveBeenCalledTimes(1);
@@ -326,6 +346,11 @@ describe("TerminalEmbed", () => {
         />
       );
 
+      // Wait for async fetch to complete first
+      await waitFor(() => {
+        expect(screen.queryByTestId("terminal-loading")).not.toBeInTheDocument();
+      });
+
       fireEvent.click(screen.getByTestId("terminal-backdrop"));
 
       expect(onClose).toHaveBeenCalledTimes(1);
@@ -340,6 +365,11 @@ describe("TerminalEmbed", () => {
           getAttachInfo={mockGetAttachInfo}
         />
       );
+
+      // Wait for async fetch to complete first
+      await waitFor(() => {
+        expect(screen.queryByTestId("terminal-loading")).not.toBeInTheDocument();
+      });
 
       fireEvent.keyDown(document, { key: "Escape" });
 
@@ -359,6 +389,11 @@ describe("TerminalEmbed", () => {
         "aria-label",
         "Close terminal modal"
       );
+
+      // Wait for async fetch to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.queryByTestId("terminal-loading")).not.toBeInTheDocument();
+      });
     });
   });
 
@@ -411,6 +446,11 @@ describe("TerminalEmbed", () => {
       );
 
       expect(screen.getByText("Terminal Access")).toBeInTheDocument();
+
+      // Wait for async fetch to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.queryByTestId("terminal-loading")).not.toBeInTheDocument();
+      });
     });
 
     it("should have footer close button", async () => {
@@ -424,6 +464,11 @@ describe("TerminalEmbed", () => {
 
       const closeButtons = screen.getAllByText("Close");
       expect(closeButtons.length).toBeGreaterThanOrEqual(1);
+
+      // Wait for async fetch to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.queryByTestId("terminal-loading")).not.toBeInTheDocument();
+      });
     });
 
     it("should show instruction text", async () => {

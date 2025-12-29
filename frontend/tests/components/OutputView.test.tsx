@@ -64,20 +64,23 @@ describe("OutputView", () => {
       render(<OutputView output="Output content" />);
 
       const outputContent = screen.getByTestId("output-content");
-      expect(outputContent).toHaveClass("max-h-96");
+      // Mobile-first: base max-h-64, responsive sm:max-h-80, md:max-h-96
+      expect(outputContent).toHaveClass("max-h-64");
     });
 
     it("should show character count", () => {
       render(<OutputView output="Hello World" />);
 
-      expect(screen.getByText("11 characters")).toBeInTheDocument();
+      // Changed from "characters" to "chars" for mobile space efficiency
+      expect(screen.getByText(/11.*chars/)).toBeInTheDocument();
     });
 
     it("should format large character counts with commas", () => {
       const longOutput = "a".repeat(10000);
       render(<OutputView output={longOutput} />);
 
-      expect(screen.getByText("10,000 characters")).toBeInTheDocument();
+      // Changed from "characters" to "chars" for mobile space efficiency
+      expect(screen.getByText(/10,000.*chars/)).toBeInTheDocument();
     });
   });
 

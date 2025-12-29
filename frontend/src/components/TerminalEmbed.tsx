@@ -98,7 +98,7 @@ export function TerminalEmbed({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       data-testid="terminal-modal"
       role="dialog"
       aria-modal="true"
@@ -112,22 +112,32 @@ export function TerminalEmbed({
         aria-hidden="true"
       />
 
-      {/* Modal content */}
+      {/* Modal content - slides up from bottom on mobile */}
       <div
-        className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 overflow-hidden"
+        className="
+          relative bg-white shadow-xl overflow-hidden w-full
+          rounded-t-2xl sm:rounded-lg
+          max-h-[90vh] sm:max-h-none
+          sm:max-w-lg sm:mx-4
+          safe-area-inset-bottom
+        "
         role="document"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
           <h2
             id="terminal-modal-title"
-            className="text-lg font-semibold text-gray-900"
+            className="text-base sm:text-lg font-semibold text-gray-900"
           >
             Terminal Access
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+            className="
+              text-gray-400 hover:text-gray-600 transition-colors
+              p-2 -mr-2 min-h-[44px] min-w-[44px]
+              flex items-center justify-center
+            "
             data-testid="terminal-close"
             aria-label="Close terminal modal"
           >
@@ -149,53 +159,56 @@ export function TerminalEmbed({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-4">
+        <div className="px-4 sm:px-6 py-4">
           {loading && (
             <div
-              className="flex items-center justify-center py-8"
+              className="flex items-center justify-center py-6 sm:py-8"
               data-testid="terminal-loading"
             >
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800" />
-              <span className="ml-3 text-gray-600">Loading container info...</span>
+              <span className="ml-3 text-gray-600 text-sm sm:text-base">Loading container info...</span>
             </div>
           )}
 
           {displayError && (
             <div
-              className="bg-red-50 border border-red-200 rounded-lg p-4"
+              className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4"
               data-testid="terminal-error"
               role="alert"
             >
-              <p className="text-red-800 font-medium">Container not available</p>
-              <p className="text-red-600 text-sm mt-1">{displayError}</p>
+              <p className="text-red-800 font-medium text-sm sm:text-base">Container not available</p>
+              <p className="text-red-600 text-xs sm:text-sm mt-1">{displayError}</p>
             </div>
           )}
 
           {attachInfo && !loading && !displayError && (
-            <div className="space-y-4">
-              <p className="text-gray-600 text-sm">
+            <div className="space-y-3 sm:space-y-4">
+              <p className="text-gray-600 text-xs sm:text-sm">
                 Run this command in your terminal to attach to the container:
               </p>
 
               {/* Command display */}
               <div className="relative">
                 <div
-                  className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm break-all"
+                  className="bg-gray-900 text-green-400 p-3 sm:p-4 rounded-lg font-mono text-xs sm:text-sm break-all pr-16"
                   data-testid="terminal-command"
                 >
                   {attachInfo.command}
                 </div>
 
-                {/* Copy button */}
+                {/* Copy button - touch friendly */}
                 <button
                   onClick={handleCopy}
-                  className={`absolute top-2 right-2 px-3 py-1 rounded text-xs font-medium transition-colors ${
-                    copyState === "copied"
+                  className={`
+                    absolute top-2 right-2 px-3 py-1.5 rounded text-xs font-medium
+                    transition-colors touch-manipulation min-h-[36px]
+                    ${copyState === "copied"
                       ? "bg-green-500 text-white"
                       : copyState === "error"
                       ? "bg-red-500 text-white"
-                      : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-                  }`}
+                      : "bg-gray-700 text-gray-200 hover:bg-gray-600 active:bg-gray-500"
+                    }
+                  `}
                   data-testid="copy-command"
                   aria-label={
                     copyState === "copied"
@@ -223,11 +236,16 @@ export function TerminalEmbed({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+        {/* Footer - touch-friendly close button */}
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="w-full bg-gray-800 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium"
+            className="
+              w-full bg-gray-800 text-white py-3 px-4 rounded-lg
+              hover:bg-gray-700 active:bg-gray-900
+              transition-colors font-medium
+              min-h-[44px] touch-manipulation
+            "
           >
             Close
           </button>
