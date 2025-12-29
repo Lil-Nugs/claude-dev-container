@@ -14,6 +14,7 @@ from app.models import (
 )
 from app.services.projects import ProjectService
 from app.services.beads import BeadsService
+from app.services.containers import ContainerService
 
 app = FastAPI(
     title="Claude Dev Container",
@@ -33,6 +34,7 @@ app.add_middleware(
 
 # Initialize services
 project_service = ProjectService()
+container_service = ContainerService()
 
 
 @app.get("/health")
@@ -121,6 +123,22 @@ async def get_progress(project_id: str) -> ProgressInfo:
 
 @app.get("/api/projects/{project_id}/attach")
 async def get_attach_info(project_id: str) -> AttachInfo:
-    """Return info needed to attach to container."""
-    # TODO: Implement with ContainerService
-    raise HTTPException(status_code=501, detail="Not implemented")
+    """Return info needed to attach to container.
+
+    Returns container ID and docker exec command for terminal attachment.
+    """
+    # Verify project exists
+    project = project_service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Get container ID
+    container_id = container_service.get_container_id(project_id)
+    if not container_id:
+        raise HTTPException(status_code=404, detail="Container not running")
+
+    # Return attach info with truncated container ID for command
+    return AttachInfo(
+        container_id=container_id,
+        command=f"docker exec -it {container_id[:12]} bash",
+    )
