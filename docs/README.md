@@ -9,6 +9,8 @@ This folder contains planning and architecture documentation for Claude Dev Cont
 | **SIMPLIFIED_PLAN.md** | MVP implementation spec | Starting any implementation work |
 | **IMPLEMENTATION_SUMMARY.md** | Overview of approach | Understanding the project split |
 | **DESIGN_DECISIONS.md** | Architecture rationale | Before making architectural choices |
+| **TESTING_GUIDE.md** | How to write and run tests | Before writing or running tests |
+| **TESTING_PHILOSOPHY.md** | Testing tiers and rationale | Understanding test strategy |
 | **FUTURE_ENHANCEMENTS.md** | Deferred features | After MVP, planning next phase |
 
 ## Document Categories
@@ -20,6 +22,8 @@ These documents define what we're building now:
 - **SIMPLIFIED_PLAN.md** - Complete MVP specification with code examples, file structure, and test requirements. This is the primary implementation target.
 - **IMPLEMENTATION_SUMMARY.md** - High-level overview explaining the simplified vs full approach split.
 - **DESIGN_DECISIONS.md** - 12 key architectural decisions with rationale and alternatives considered.
+- **TESTING_GUIDE.md** - How to write tests, which tests to run, file locations, and patterns. Primary reference for agents.
+- **TESTING_PHILOSOPHY.md** - Testing tiers (unit/integration/E2E), when each runs, and coverage goals.
 
 ### Reference (Future)
 

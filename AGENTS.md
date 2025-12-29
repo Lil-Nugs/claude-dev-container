@@ -12,6 +12,8 @@ This is a planning repository for **Claude Dev Container** - a mobile-first syst
 - `docs/SIMPLIFIED_PLAN.md` - **Start here** - MVP implementation (6 beads, ~19 files)
 - `docs/IMPLEMENTATION_SUMMARY.md` - Overview and next steps
 - `docs/DESIGN_DECISIONS.md` - Architecture choices (12 key decisions)
+- `docs/TESTING_GUIDE.md` - **How to write and run tests** (for agents)
+- `docs/TESTING_PHILOSOPHY.md` - Testing tiers and rationale
 
 ### Reference (Future)
 - `docs/FUTURE_ENHANCEMENTS.md` - Deferred automation features (Tier 1/2/3)
@@ -96,7 +98,7 @@ bd sync               # Sync with git
 - All beads must include unit tests for new code
 - Agents must run tests before committing
 - CI must pass before PRs are merged
-- Review agents check test coverage
+- See `docs/TESTING_GUIDE.md` for which tests to run based on changes
 
 ## Module README Convention
 
