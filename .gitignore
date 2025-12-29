@@ -46,3 +46,6 @@ Thumbs.db
 # Docker
 *.env.local
 docker-compose.override.yml
+# Playwright test results
+test-results/
+playwright-report/
