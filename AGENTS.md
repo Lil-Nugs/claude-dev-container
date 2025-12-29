@@ -2,16 +2,50 @@
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
+**For detailed operational instructions, see [AGENT_INSTRUCTIONS.md](AGENT_INSTRUCTIONS.md)**
+
 ## Project Overview
 
 This is a planning repository for **Claude Dev Container** - a mobile-first system for managing software projects with AI-powered agent execution in isolated Docker containers.
 
+**Tech Stack:** FastAPI (Python 3.11+) + React (TypeScript) + Docker
+
+## Quick Reference
+
+```bash
+# Issue tracking
+bd ready                     # Find available work
+bd show <id>                 # View issue details
+bd update <id> --status in_progress  # Claim work
+bd close <id>                # Complete work
+bd sync                      # Sync with git
+
+# Backend development
+cd backend
+pytest                       # Run tests
+ruff check .                 # Lint code
+uvicorn app.main:app --reload  # Dev server
+
+# Frontend development
+cd frontend
+npm test                     # Run tests
+npm run lint                 # Lint code
+npm run dev                  # Dev server
+```
+
 ## Documentation
 
 ### Primary (MVP)
-- `docs/SIMPLIFIED_PLAN.md` - **Start here** - MVP implementation (6 beads, ~19 files)
+- `docs/SIMPLIFIED_PLAN.md` - **Start here** - MVP implementation (6 epics, ~19 files)
 - `docs/IMPLEMENTATION_SUMMARY.md` - Overview and next steps
 - `docs/DESIGN_DECISIONS.md` - Architecture choices (12 key decisions)
+- `docs/TESTING_GUIDE.md` - **How to write and run tests** (for agents)
+- `docs/TESTING_PHILOSOPHY.md` - Testing tiers and rationale
+- `docs/TROUBLESHOOTING.md` - Common issues and recovery
+
+### Operational
+- `AGENT_INSTRUCTIONS.md` - **Detailed agent operations** (code standards, testing, git workflow)
+- `examples/` - Workflow examples for common tasks
 
 ### Reference (Future)
 - `docs/FUTURE_ENHANCEMENTS.md` - Deferred automation features (Tier 1/2/3)
@@ -20,16 +54,6 @@ This is a planning repository for **Claude Dev Container** - a mobile-first syst
 - `docs/CONTAINER_PLAN.md` - Full container setup (reference)
 - `docs/AGENT_WORKFLOW.md` - Full orchestration workflows (reference)
 - `docs/AGENT_CHALLENGES.md` - Challenges solved by automation (reference)
-
-## Quick Reference
-
-```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --status in_progress  # Claim work
-bd close <id>         # Complete work
-bd sync               # Sync with git
-```
 
 ## 🚨 Protected Branch Policy 🚨
 
@@ -96,7 +120,9 @@ bd sync               # Sync with git
 - All beads must include unit tests for new code
 - Agents must run tests before committing
 - CI must pass before PRs are merged
-- Review agents check test coverage
+- See `.claude/test-strategy.md` for quick agent reference
+- See `docs/TESTING_GUIDE.md` for detailed patterns
+- Check `.test-skip` before investigating failures (known broken tests)
 
 ## Module README Convention
 

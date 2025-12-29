@@ -1,0 +1,14 @@
+# Tests to skip due to known issues
+# Format: One test name or pattern per line (regex supported)
+#
+# Example entries:
+#   # Issue #42: Database deadlock in CI
+#   test_concurrent_writes
+#
+#   # Issue #99: Flaky on slow machines
+#   test_timeout_.*
+#
+# Agents: Check this file BEFORE investigating a test failure.
+# If the test is listed here, move on - it's a known issue.
+
+# (no tests currently skipped)

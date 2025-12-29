@@ -44,6 +44,41 @@
 | Timeout enforcement | You cancel manually if stuck |
 | Polling infrastructure | Use SSE or just wait for completion |
 
+### Blocking UX Strategy (MVP)
+
+The MVP uses **blocking requests** - the frontend waits for Claude to finish before showing results. This is simpler than SSE streaming but requires thought about UX during long-running operations (often 2-10 minutes).
+
+**MVP Approach:**
+
+| Element | Implementation |
+|---------|---------------|
+| **Elapsed timer** | Button shows "Working... 2:34" so user knows it's running |
+| **Refresh button** | Yellow ↻ button appears during execution to fetch progress on demand |
+| **Disabled buttons** | All actions disabled during execution to prevent double-runs |
+| **Terminal escape hatch** | User can always open terminal to see live output or intervene |
+| **State feedback** | Response includes state (completed/blocked/failed) for appropriate UI |
+| **Error toasts** | Immediate feedback when execution fails or is blocked |
+
+**Why blocking is acceptable for MVP:**
+- You're watching the output anyway (key workflow insight)
+- Refresh button shows progress without waiting for completion
+- Terminal provides real-time visibility when needed
+- Elapsed timer confirms the request is still running
+- Network errors fail fast with clear feedback
+
+**Future SSE upgrade path:**
+```python
+# Backend change (when needed)
+from sse_starlette.sse import EventSourceResponse
+
+@app.get("/api/projects/{project_id}/work/{bead_id}/stream")
+async def work_stream(...):
+    async def generate():
+        for chunk in containers.exec_claude_streaming(...):
+            yield {"data": chunk}
+    return EventSourceResponse(generate())
+```
+
 ---
 
 ## Architecture
@@ -232,6 +267,7 @@ class ContainerService:
     def __init__(self):
         self.client = docker.from_env()
         self.containers = {}  # project_id -> container
+        self.executions = {}  # project_id -> {"thread": Thread, "output_file": str, "done": Event}
 
     def ensure_container(self, project: dict) -> str:
         """Ensure container exists, return container ID"""
@@ -246,26 +282,133 @@ class ContainerService:
         self.containers[project["id"]] = container
         return container.id
 
-    def exec_claude(self, project_id: str, prompt: str) -> str:
-        """Execute Claude CLI in container, return output"""
+    def exec_claude(self, project_id: str, prompt: str) -> dict:
+        """Execute Claude CLI in container, streaming output to file for progress checks"""
+        import tempfile
+        import threading
+
         container = self.containers[project_id]
+        output_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.log')
+        done_event = threading.Event()
+        result = {"exit_code": None, "state": "running"}
 
-        # Run claude with prompt
-        exec_result = container.exec_run(
-            cmd=["claude", "--dangerously-skip-permissions", "-p", prompt],
-            workdir="/workspace",
-            user="claude",
-            demux=True,
-        )
+        def run_claude():
+            # Run with streaming output
+            exec_id = container.client.api.exec_create(
+                container.id,
+                cmd=["claude", "--dangerously-skip-permissions", "-p", prompt],
+                workdir="/workspace",
+                user="claude",
+            )
+            output_gen = container.client.api.exec_start(exec_id, stream=True)
 
-        stdout, stderr = exec_result.output
-        return (stdout or b"").decode() + (stderr or b"").decode()
+            # Stream output to file
+            for chunk in output_gen:
+                output_file.write(chunk.decode())
+                output_file.flush()
+
+            output_file.close()
+            inspect = container.client.api.exec_inspect(exec_id)
+            result["exit_code"] = inspect["ExitCode"]
+            done_event.set()
+
+        # Start background execution
+        thread = threading.Thread(target=run_claude)
+        thread.start()
+        self.executions[project_id] = {
+            "thread": thread,
+            "output_file": output_file.name,
+            "done": done_event,
+            "result": result,
+        }
+
+        # Block until complete (caller can poll get_progress for updates)
+        thread.join()
+
+        # Read final output
+        with open(output_file.name) as f:
+            output = f.read()
+
+        exit_code = result["exit_code"]
+
+        # Determine execution state
+        if exit_code == 0:
+            state = "completed"
+        elif exit_code == 1 and "BLOCKED:" in output:
+            state = "blocked"
+        elif exit_code == 130:  # SIGINT - cancelled
+            state = "cancelled"
+        else:
+            state = "failed"
+
+        # Cleanup
+        del self.executions[project_id]
+
+        return {
+            "output": output,
+            "exit_code": exit_code,
+            "state": state,
+        }
+
+    def get_progress(self, project_id: str) -> dict:
+        """Get current progress of running execution (for refresh button)"""
+        if project_id not in self.executions:
+            return {"running": False, "output": "", "message": "No execution running"}
+
+        exec_info = self.executions[project_id]
+        try:
+            with open(exec_info["output_file"]) as f:
+                output = f.read()
+        except:
+            output = ""
+
+        # Extract last meaningful message (look for recent output)
+        lines = output.strip().split('\n')
+        last_lines = lines[-10:] if len(lines) > 10 else lines
+        recent = '\n'.join(last_lines)
+
+        return {
+            "running": not exec_info["done"].is_set(),
+            "output": output,
+            "recent": recent,  # Last ~10 lines for quick view
+            "bytes": len(output),
+        }
 
     def get_container_id(self, project_id: str) -> str:
         """Get container ID for docker exec attachment"""
         if project_id in self.containers:
             return self.containers[project_id].id
         return None
+```
+
+### Utility Functions
+
+```python
+# utils.py
+from pathlib import Path
+from typing import Optional
+
+def detect_test_command(project_path: str) -> Optional[str]:
+    """Detect test command based on project structure"""
+    path = Path(project_path)
+
+    # Node.js
+    if (path / "package.json").exists():
+        return "npm test"
+
+    # Python
+    if (path / "pytest.ini").exists() or (path / "tests").exists():
+        return "pytest"
+
+    # Go
+    if (path / "go.mod").exists():
+        return "go test ./..."
+
+    # Rust
+    if (path / "Cargo.toml").exists():
+        return "cargo test"
+
+    return None
 ```
 
 ### Main App
@@ -277,6 +420,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.services.projects import ProjectService
 from app.services.beads import BeadsService
+from app.utils import detect_test_command
 from app.services.containers import ContainerService
 from app.prompts import WORK_PROMPT, REVIEW_PROMPT
 
@@ -317,18 +461,33 @@ def work_on_bead(project_id: str, bead_id: str, context: str = ""):
     if context:
         prompt += f"\n\nAdditional context:\n{context}"
 
-    # Execute Claude (blocking - you watch the output)
-    output = containers.exec_claude(project_id, prompt)
+    # Execute Claude and return structured result
+    result = containers.exec_claude(project_id, prompt)
 
-    return {"output": output}
+    # Return state info for frontend to handle appropriately
+    return {
+        "output": result["output"],
+        "state": result["state"],       # completed | blocked | failed | cancelled
+        "exit_code": result["exit_code"],
+    }
 
 @app.post("/api/projects/{project_id}/review")
 def review_work(project_id: str):
     project = projects.get_project(project_id)
     containers.ensure_container(project)
 
-    output = containers.exec_claude(project_id, REVIEW_PROMPT)
-    return {"output": output}
+    result = containers.exec_claude(project_id, REVIEW_PROMPT)
+    return {
+        "output": result["output"],
+        "state": result["state"],
+        "exit_code": result["exit_code"],
+    }
+
+@app.get("/api/projects/{project_id}/progress")
+def get_progress(project_id: str):
+    """Get current execution progress (for refresh button during long runs)"""
+    progress = containers.get_progress(project_id)
+    return progress
 
 @app.post("/api/projects/{project_id}/push-pr")
 def push_and_pr(project_id: str, title: str = None):
@@ -408,42 +567,107 @@ frontend/
 #### `ActionBar.tsx`
 
 ```tsx
+type ExecutionState = "completed" | "blocked" | "failed" | "cancelled";
+
+interface ExecutionResult {
+  output: string;
+  state: ExecutionState;
+  exit_code: number;
+}
+
 interface Props {
   projectId: string;
   selectedBead: Bead | null;
-  onOutput: (output: string) => void;
+  onOutput: (output: string, state?: ExecutionState) => void;
 }
 
 export function ActionBar({ projectId, selectedBead, onOutput }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+
+  // Timer for long-running operations (blocking UX feedback)
+  useEffect(() => {
+    if (!loading) {
+      setElapsed(0);
+      return;
+    }
+    const timer = setInterval(() => setElapsed(e => e + 1), 1000);
+    return () => clearInterval(timer);
+  }, [loading]);
+
+  const formatTime = (s: number) =>
+    `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   const handleWork = async () => {
     if (!selectedBead) return;
     setLoading("work");
-    const result = await api.workOnBead(projectId, selectedBead.id);
-    onOutput(result.output);
-    setLoading(null);
+    try {
+      const result: ExecutionResult = await api.workOnBead(projectId, selectedBead.id);
+      onOutput(result.output, result.state);
+
+      // State-specific notifications
+      if (result.state === "blocked") {
+        toast.warn("Claude is blocked - check output for details");
+      } else if (result.state === "failed") {
+        toast.error(`Execution failed (exit ${result.exit_code})`);
+      }
+    } catch (err) {
+      onOutput(`Error: ${err.message}`, "failed");
+      toast.error("Request failed - check network");
+    } finally {
+      setLoading(null);
+    }
   };
 
   const handleReview = async () => {
     setLoading("review");
-    const result = await api.review(projectId);
-    onOutput(result.output);
-    setLoading(null);
+    try {
+      const result: ExecutionResult = await api.review(projectId);
+      onOutput(result.output, result.state);
+    } catch (err) {
+      onOutput(`Error: ${err.message}`, "failed");
+    } finally {
+      setLoading(null);
+    }
   };
 
   const handlePushPR = async () => {
     setLoading("push");
-    const result = await api.pushAndPR(projectId);
-    onOutput(`Push:\n${result.push}\n\nPR:\n${result.pr}`);
-    setLoading(null);
+    try {
+      const result = await api.pushAndPR(projectId);
+      onOutput(`Push:\n${result.push}\n\nPR:\n${result.pr}`);
+    } catch (err) {
+      onOutput(`Error: ${err.message}`, "failed");
+    } finally {
+      setLoading(null);
+    }
   };
 
   const handleTerminal = async () => {
     const info = await api.getAttachInfo(projectId);
-    // Open terminal embed or show command
     window.open(`/terminal/${projectId}`, '_blank');
   };
+
+  // Refresh button - fetch current progress during long runs
+  const handleRefresh = async () => {
+    try {
+      const progress = await api.getProgress(projectId);
+      if (progress.running) {
+        // Show recent output with byte count for context
+        const preview = progress.recent || "(no output yet)";
+        onOutput(`--- Progress Update (${progress.bytes} bytes) ---\n${preview}\n--- Still running... ---`);
+        toast.info(`Progress: ${progress.bytes} bytes received`);
+      } else {
+        toast.info("No execution currently running");
+      }
+    } catch (err) {
+      toast.error("Failed to fetch progress");
+    }
+  };
+
+  // Loading state with elapsed time indicator
+  const buttonText = (action: string, label: string, activeLabel: string) =>
+    loading === action ? `${activeLabel} ${formatTime(elapsed)}` : label;
 
   return (
     <div className="flex gap-2 p-4 bg-gray-100 sticky bottom-0">
@@ -452,7 +676,7 @@ export function ActionBar({ projectId, selectedBead, onOutput }: Props) {
         disabled={!selectedBead || loading !== null}
         className="flex-1 bg-blue-500 text-white py-3 rounded-lg disabled:bg-gray-300"
       >
-        {loading === "work" ? "Working..." : "Work"}
+        {buttonText("work", "Work", "Working...")}
       </button>
 
       <button
@@ -460,7 +684,7 @@ export function ActionBar({ projectId, selectedBead, onOutput }: Props) {
         disabled={loading !== null}
         className="flex-1 bg-purple-500 text-white py-3 rounded-lg disabled:bg-gray-300"
       >
-        {loading === "review" ? "Reviewing..." : "Review"}
+        {buttonText("review", "Review", "Reviewing...")}
       </button>
 
       <button
@@ -468,8 +692,19 @@ export function ActionBar({ projectId, selectedBead, onOutput }: Props) {
         disabled={loading !== null}
         className="flex-1 bg-green-500 text-white py-3 rounded-lg disabled:bg-gray-300"
       >
-        {loading === "push" ? "Pushing..." : "Push & PR"}
+        {buttonText("push", "Push & PR", "Pushing...")}
       </button>
+
+      {/* Refresh button - only shown during loading */}
+      {loading && (
+        <button
+          onClick={handleRefresh}
+          className="bg-yellow-500 text-white px-4 py-3 rounded-lg"
+          title="Fetch current progress"
+        >
+          ↻
+        </button>
+      )}
 
       <button
         onClick={handleTerminal}
