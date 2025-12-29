@@ -17,10 +17,14 @@ fi
 echo "=== Overnight Batch Orchestrator ==="
 echo "Starting at: $(date)"
 echo "Will run until all ready beads are complete."
+echo "Running with --dangerously-skip-permissions (auto-accept all)"
 echo ""
 
-# Run Claude in print mode with the prompt
-claude --print "$(cat "$PROMPT_FILE")"
+# Run Claude with:
+#   --print: non-interactive mode, outputs to stdout
+#   --dangerously-skip-permissions: auto-accept all tool calls (for unattended runs)
+#   --verbose: show more detail about what's happening
+claude --print --dangerously-skip-permissions --verbose "$(cat "$PROMPT_FILE")"
 
 echo ""
 echo "=== Completed at: $(date) ==="
