@@ -12,6 +12,11 @@ This document captures gaps between documentation and implementation readiness. 
 | Terminal Embed | Decided | No | MVP: command display modal; Future: ttyd |
 | Loading/Error States | Specified | No | Skeleton, error, empty components ready |
 | PWA Terminal Access | Specified | No | Modal-based approach works cross-platform |
+| PWA Manifest | Specified | No | Complete config in Section 7 |
+| Service Worker Caching | Specified | No | CacheFirst for assets, NetworkFirst for API |
+| Responsive Breakpoints | Specified | No | Default Tailwind (sm/md/lg/xl) in Section 9 |
+| Offline Behavior | Specified | No | Show cached data, disable actions |
+| E2E Test Scenarios | Specified | No | 10-12 comprehensive tests in TESTING_GUIDE.md |
 
 ---
 
@@ -986,14 +991,562 @@ const handleTerminal = () => {
 
 ---
 
+## 7. PWA Manifest (Complete Specification)
+
+### Status: Fully Specified
+
+The PWA manifest requires additional fields beyond what's in FRONTEND_PLAN.md for full iOS/Android support.
+
+### Complete Manifest Configuration
+
+Update `vite.config.ts` with this complete manifest:
+
+```typescript
+VitePWA({
+  registerType: "autoUpdate",
+  includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+  manifest: {
+    id: "/",
+    name: "DevContainer",
+    short_name: "DevContainer",
+    description: "Manage software projects with Claude",
+    theme_color: "#2563eb",
+    background_color: "#111827",  // gray-900 for dark theme
+    display: "standalone",
+    orientation: "portrait",
+    start_url: "/",
+    scope: "/",
+    categories: ["developer tools", "productivity"],
+    icons: [
+      {
+        src: "/icons/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: "/icons/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
+      {
+        src: "/icons/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",  // For Android adaptive icons
+      },
+      {
+        src: "/icons/icon-180.png",
+        sizes: "180x180",
+        type: "image/png",
+        purpose: "any",  // iOS home screen
+      },
+    ],
+  },
+  // ... workbox config
+})
+```
+
+### Required Icon Files
+
+```
+frontend/public/icons/
+├── icon.svg              # Source SVG (for manual PNG conversion)
+├── icon-180.png          # iOS home screen (180x180)
+├── icon-192.png          # Android/PWA standard (192x192)
+├── icon-512.png          # Android/PWA large (512x512)
+└── apple-touch-icon.png  # iOS fallback (180x180, copy of icon-180.png)
+```
+
+### HTML Meta Tags
+
+Add to `index.html` for iOS support:
+
+```html
+<head>
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2563eb">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DevContainer">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+</head>
+```
+
+### Icon Design Specification
+
+The icon should represent a container/box with code/development theme:
+
+- **Safe zone**: Center 80% for maskable icons (Android crops to circle)
+- **Background**: #2563eb (blue-600) or gradient
+- **Foreground**: White container/cube outline with brackets `{ }`
+- **Style**: Minimal, recognizable at small sizes
+
+### Implementation Checklist
+
+- [ ] Create icon.svg following design spec
+- [ ] Generate PNGs: 180x180, 192x192, 512x512
+- [ ] Copy icon-180.png to apple-touch-icon.png
+- [ ] Add meta tags to index.html
+- [ ] Update vite.config.ts manifest
+- [ ] Test on iOS Safari "Add to Home Screen"
+- [ ] Test on Android Chrome install prompt
+
+---
+
+## 8. Service Worker Caching Strategy
+
+### Status: Fully Specified
+
+Complete Workbox configuration for offline-capable PWA.
+
+### Caching Strategies by Resource Type
+
+| Resource Type | Strategy | Cache Name | Rationale |
+|--------------|----------|------------|-----------|
+| Static assets (JS, CSS) | CacheFirst | `static-assets` | Versioned by build, safe to cache long-term |
+| HTML shell | NetworkFirst | `html-cache` | Ensure fresh app shell, fall back to cache |
+| Images | CacheFirst | `images` | Rarely change, save bandwidth |
+| API calls | NetworkFirst | `api-cache` | Need fresh data, but work offline with stale |
+| Fonts | CacheFirst | `fonts` | Never change once loaded |
+
+### Complete Workbox Configuration
+
+```typescript
+// vite.config.ts
+VitePWA({
+  registerType: "autoUpdate",
+  workbox: {
+    // Precache app shell and static assets
+    globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+
+    // Runtime caching rules
+    runtimeCaching: [
+      // API calls - NetworkFirst with 10s timeout
+      {
+        urlPattern: /^https:\/\/.*\.tailscale\.net\/api\/.*/i,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'api-cache',
+          networkTimeoutSeconds: 10,
+          expiration: {
+            maxEntries: 50,
+            maxAgeSeconds: 60 * 60, // 1 hour
+          },
+          cacheableResponse: {
+            statuses: [0, 200],
+          },
+        },
+      },
+
+      // Images - CacheFirst
+      {
+        urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'images',
+          expiration: {
+            maxEntries: 100,
+            maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+          },
+        },
+      },
+
+      // Fonts - CacheFirst
+      {
+        urlPattern: /\.(?:woff|woff2|ttf|eot)$/i,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'fonts',
+          expiration: {
+            maxEntries: 20,
+            maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+          },
+        },
+      },
+    ],
+
+    // Skip waiting for immediate activation
+    skipWaiting: true,
+    clientsClaim: true,
+  },
+})
+```
+
+### Cache Size Limits
+
+- **api-cache**: Max 50 entries, 1 hour expiration
+- **images**: Max 100 entries, 30 days expiration
+- **fonts**: Max 20 entries, 1 year expiration
+- **static-assets**: Managed by precache (versioned)
+
+### Update Behavior
+
+- `registerType: "autoUpdate"` - New SW activates immediately when available
+- `skipWaiting: true` - Don't wait for old tabs to close
+- `clientsClaim: true` - Take control of all clients immediately
+
+### Implementation Checklist
+
+- [ ] Update vite.config.ts with complete workbox config
+- [ ] Test offline behavior after caching
+- [ ] Verify API cache works with stale data
+- [ ] Test cache clearing on app update
+
+---
+
+## 9. Mobile Responsive Breakpoints
+
+### Status: Fully Specified
+
+Using default Tailwind breakpoints with defined layout behaviors.
+
+### Breakpoint Definitions
+
+| Breakpoint | Min Width | Device Target | Layout |
+|------------|-----------|---------------|--------|
+| (default)  | 0px       | Mobile phones | Single column, stacked |
+| `sm:`      | 640px     | Large phones  | Slight padding adjustments |
+| `md:`      | 768px     | Tablets       | Two-column where appropriate |
+| `lg:`      | 1024px    | Laptops       | Full sidebar + content |
+| `xl:`      | 1280px    | Desktops      | Max-width container centered |
+
+### Layout Behavior by Breakpoint
+
+#### Mobile (< 768px)
+```
+┌─────────────────────┐
+│ Header              │
+├─────────────────────┤
+│ Project Selector ▼  │  ← Dropdown instead of list
+├─────────────────────┤
+│ Bead List           │  ← Full width, scrollable
+│ [Bead 1]            │
+│ [Bead 2]            │
+├─────────────────────┤
+│ Action Bar          │  ← Fixed bottom
+│ [Work] [Review] [⋮] │
+├─────────────────────┤
+│ Output (collapsed)  │  ← Expandable sheet
+└─────────────────────┘
+```
+
+#### Tablet/Desktop (≥ 768px)
+```
+┌─────────────────────────────────────────┐
+│ Header                                   │
+├────────────┬────────────────────────────┤
+│ Projects   │ Beads          │ Output    │
+│ [Proj 1]   │ [Bead 1]       │ ...       │
+│ [Proj 2]   │ [Bead 2]       │ ...       │
+│            │ [Bead 3]       │ ...       │
+│            ├────────────────┤           │
+│            │ Action Bar     │           │
+│            │ [Work][Review] │           │
+└────────────┴────────────────┴───────────┘
+```
+
+### Component-Specific Responsive Behavior
+
+#### App Layout
+```tsx
+// App.tsx
+<div className="min-h-screen bg-gray-900">
+  <Header />
+  <main className="container mx-auto px-4 py-4 md:px-6 lg:px-8">
+    {/* Mobile: stacked, md+: grid */}
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6">
+      {/* Projects sidebar */}
+      <aside className="md:col-span-3 lg:col-span-2">
+        <ProjectList />
+      </aside>
+
+      {/* Beads + Actions */}
+      <section className="md:col-span-5 lg:col-span-4">
+        <BeadList />
+        <ActionBar />
+      </section>
+
+      {/* Output panel */}
+      <section className="md:col-span-4 lg:col-span-6">
+        <OutputView />
+      </section>
+    </div>
+  </main>
+</div>
+```
+
+#### Mobile-Specific Components
+```tsx
+// Mobile project dropdown (shown < md)
+<div className="md:hidden">
+  <select className="w-full p-3 bg-gray-800 rounded-lg">
+    {projects.map(p => <option key={p.id}>{p.name}</option>)}
+  </select>
+</div>
+
+// Desktop project list (shown ≥ md)
+<div className="hidden md:block">
+  <ProjectList />
+</div>
+```
+
+#### Action Bar (Fixed on Mobile)
+```tsx
+// ActionBar.tsx
+<div className="
+  fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 p-4
+  md:static md:border-t-0 md:bg-transparent md:p-0
+">
+  <div className="flex gap-3 justify-center md:justify-start">
+    <Button>Work</Button>
+    <Button>Review</Button>
+    <Button>Push & PR</Button>
+  </div>
+</div>
+```
+
+#### Output View (Expandable Sheet on Mobile)
+```tsx
+// OutputView.tsx - Mobile bottom sheet
+<div className="
+  fixed bottom-16 left-0 right-0 h-1/2 bg-gray-900 rounded-t-xl
+  transform transition-transform
+  md:static md:h-auto md:rounded-lg
+  {expanded ? 'translate-y-0' : 'translate-y-full md:translate-y-0'}
+">
+  {/* Drag handle - mobile only */}
+  <div className="md:hidden h-8 flex items-center justify-center">
+    <div className="w-12 h-1 bg-gray-600 rounded-full" />
+  </div>
+  <div className="p-4 overflow-y-auto max-h-[calc(100%-2rem)] md:max-h-96">
+    {/* Output content */}
+  </div>
+</div>
+```
+
+### Touch Targets
+
+Minimum touch target sizes for mobile:
+- Buttons: `min-h-[44px] min-w-[44px]` (Apple HIG)
+- List items: `py-3` minimum padding
+- Icons: `p-2` clickable area around icon
+
+```tsx
+// Mobile-friendly button
+<button className="
+  px-4 py-3 min-h-[44px]
+  text-base
+  md:px-3 md:py-2 md:min-h-0 md:text-sm
+">
+  Work
+</button>
+```
+
+### Implementation Checklist
+
+- [ ] Set up Tailwind with default breakpoints
+- [ ] Implement responsive grid layout in App.tsx
+- [ ] Create mobile project dropdown component
+- [ ] Make ActionBar fixed on mobile
+- [ ] Create expandable OutputView sheet for mobile
+- [ ] Ensure 44px minimum touch targets
+- [ ] Test on iOS Safari and Android Chrome
+
+---
+
+## 10. Offline Behavior
+
+### Status: Fully Specified
+
+Strategy: Show cached data, disable actions when offline.
+
+### Offline Detection
+
+```typescript
+// frontend/src/hooks/useOnlineStatus.ts
+
+export function useOnlineStatus(): boolean {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return isOnline;
+}
+```
+
+### Offline Banner Component
+
+```typescript
+// frontend/src/components/OfflineBanner.tsx
+
+export function OfflineBanner() {
+  const isOnline = useOnlineStatus();
+
+  if (isOnline) return null;
+
+  return (
+    <div className="
+      fixed top-0 left-0 right-0 z-50
+      bg-amber-600 text-white text-center py-2 px-4
+      text-sm font-medium
+    ">
+      You're offline. Showing cached data. Actions disabled.
+    </div>
+  );
+}
+```
+
+### Disabled Actions When Offline
+
+```typescript
+// ActionBar.tsx
+
+export function ActionBar({ projectId, selectedBead }: ActionBarProps) {
+  const isOnline = useOnlineStatus();
+
+  const handleWork = async () => {
+    if (!isOnline) return;  // Guard
+    // ... execute work
+  };
+
+  return (
+    <div className="flex gap-3">
+      <button
+        onClick={handleWork}
+        disabled={!selectedBead || !isOnline}
+        className={`
+          px-4 py-2 rounded-lg font-medium
+          ${isOnline
+            ? 'bg-blue-600 hover:bg-blue-500 text-white'
+            : 'bg-gray-600 text-gray-400 cursor-not-allowed'}
+        `}
+        title={isOnline ? 'Execute work on bead' : 'Offline - action disabled'}
+      >
+        Work
+      </button>
+      {/* Same pattern for Review, Push & PR */}
+    </div>
+  );
+}
+```
+
+### Cached Data Display
+
+When offline, the service worker serves cached API responses:
+
+```typescript
+// useProjects.ts - No special handling needed
+
+export function useProjects() {
+  const [data, setData] = useState<Project[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const isOnline = useOnlineStatus();
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Service worker returns cached response when offline
+      const projects = await api.listProjects();
+      setData(projects);
+      setError(null);
+    } catch (e) {
+      // Only show error if online (offline has cached data or empty state)
+      if (isOnline) {
+        setError(e instanceof Error ? e.message : 'Failed to fetch');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [isOnline]);
+
+  useEffect(() => { refetch(); }, [refetch]);
+
+  return { data, loading, error, refetch };
+}
+```
+
+### Stale Data Indicator
+
+Show when data might be outdated:
+
+```typescript
+// frontend/src/components/StaleDataBadge.tsx
+
+interface StaleDataBadgeProps {
+  lastFetched: Date | null;
+}
+
+export function StaleDataBadge({ lastFetched }: StaleDataBadgeProps) {
+  const isOnline = useOnlineStatus();
+
+  if (isOnline || !lastFetched) return null;
+
+  const ageMinutes = Math.floor((Date.now() - lastFetched.getTime()) / 60000);
+
+  return (
+    <span className="
+      inline-flex items-center gap-1
+      text-xs text-amber-400 bg-amber-900/30
+      px-2 py-0.5 rounded
+    ">
+      <span>📡</span>
+      Cached {ageMinutes}m ago
+    </span>
+  );
+}
+```
+
+### Behavior Summary
+
+| State | Projects | Beads | Actions | Output |
+|-------|----------|-------|---------|--------|
+| **Online** | Live data | Live data | Enabled | Real-time |
+| **Offline (cached)** | Cached data + badge | Cached data + badge | Disabled + tooltip | Last output |
+| **Offline (no cache)** | Empty state | Empty state | Disabled | Empty state |
+
+### Implementation Checklist
+
+- [ ] Create `useOnlineStatus` hook
+- [ ] Create `OfflineBanner` component
+- [ ] Add offline guard to all action handlers
+- [ ] Style disabled buttons for offline state
+- [ ] Create `StaleDataBadge` component
+- [ ] Add banner to App.tsx layout
+- [ ] Test offline behavior in DevTools
+
+---
+
 ## Resolution Priority
 
 1. **MSW Handlers** (Critical) - Block component testing
 2. **TypeScript Types** (High) - Needed at implementation start
-3. **State Management** (Done) - Already decided, no action needed
-4. **Loading/Error/Empty States** (High) - Core UX patterns
-5. **Terminal Embed** (Medium) - Needed for Epic 5.3
-6. **PWA Terminal Access** (Low) - Modal approach works, enhancements can wait
+3. **PWA Manifest** (High) - Required for mobile install
+4. **Service Worker Caching** (High) - Enables offline mode
+5. **Responsive Breakpoints** (High) - Mobile usability
+6. **Offline Behavior** (Medium) - UX polish
+7. **State Management** (Done) - Already decided, no action needed
+8. **Loading/Error/Empty States** (High) - Core UX patterns
+9. **Terminal Embed** (Medium) - Needed for Epic 5.3
+10. **PWA Terminal Access** (Low) - Modal approach works, enhancements can wait
 
 ## See Also
 
