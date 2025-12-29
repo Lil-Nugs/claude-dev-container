@@ -2,146 +2,19 @@
  * Unit tests for API client
  *
  * Tests the fetch wrapper and all API endpoints using MSW.
+ * Uses the global MSW server from setup.ts.
  */
 
-import { describe, it, expect, beforeAll, afterEach, afterAll } from "vitest";
-import { setupServer } from "msw/node";
+import { describe, it, expect } from "vitest";
 import { http, HttpResponse } from "msw";
 
 import { projectApi, beadsApi, actionApi, ApiError } from "../src/api";
-import type {
-  Project,
-  Bead,
-  ExecutionResult,
-  ProgressInfo,
-  AttachInfo,
-  PushPRResponse,
-} from "../src/types";
-
-// =============================================================================
-// Test data
-// =============================================================================
-
-const mockProjects: Project[] = [
-  {
-    id: "proj-1",
-    name: "test-project",
-    path: "/home/user/projects/test-project",
-    has_beads: true,
-  },
-  {
-    id: "proj-2",
-    name: "another-project",
-    path: "/home/user/projects/another-project",
-    has_beads: false,
-  },
-];
-
-const mockBeads: Bead[] = [
-  {
-    id: "bead-1",
-    title: "Implement feature X",
-    status: "open",
-    description: "Add the new feature X",
-    priority: 1,
-    type: "feature",
-  },
-  {
-    id: "bead-2",
-    title: "Fix bug",
-    status: "in_progress",
-    description: "Fix the login bug",
-    priority: 2,
-    type: "bug",
-  },
-];
-
-const mockExecutionResult: ExecutionResult = {
-  output: "Execution completed successfully",
-  state: "completed",
-  exit_code: 0,
-};
-
-const mockProgressInfo: ProgressInfo = {
-  running: true,
-  output: "Working on task...",
-  recent: "Current step...",
-  bytes: 2048,
-};
-
-const mockAttachInfo: AttachInfo = {
-  container_id: "abc123def456",
-  command: "docker exec -it abc123def456 /bin/bash",
-};
-
-const mockPushPRResponse: PushPRResponse = {
-  push: "Everything up-to-date",
-  pr: "https://github.com/user/repo/pull/42",
-};
-
-// =============================================================================
-// MSW Server setup
-// =============================================================================
-
-const handlers = [
-  // Project endpoints
-  http.get("/api/projects", () => {
-    return HttpResponse.json(mockProjects);
-  }),
-
-  http.get("/api/projects/:projectId", ({ params }) => {
-    const project = mockProjects.find((p) => p.id === params["projectId"]);
-    if (!project) {
-      return new HttpResponse(JSON.stringify({ error: "Project not found" }), {
-        status: 404,
-      });
-    }
-    return HttpResponse.json(project);
-  }),
-
-  // Beads endpoints
-  http.get("/api/projects/:projectId/beads", ({ params, request }) => {
-    const url = new URL(request.url);
-    const statusFilter = url.searchParams.get("status");
-
-    let beads = [...mockBeads];
-    if (statusFilter) {
-      beads = beads.filter((b) => b.status === statusFilter);
-    }
-    return HttpResponse.json(beads);
-  }),
-
-  // Action endpoints
-  http.post("/api/projects/:projectId/work/:beadId", () => {
-    return HttpResponse.json(mockExecutionResult);
-  }),
-
-  http.post("/api/projects/:projectId/review", () => {
-    return HttpResponse.json(mockExecutionResult);
-  }),
-
-  http.post("/api/projects/:projectId/push-pr", () => {
-    return HttpResponse.json(mockPushPRResponse);
-  }),
-
-  http.get("/api/projects/:projectId/progress", () => {
-    return HttpResponse.json(mockProgressInfo);
-  }),
-
-  http.get("/api/projects/:projectId/attach", () => {
-    return HttpResponse.json(mockAttachInfo);
-  }),
-];
-
-const server = setupServer(...handlers);
+import { server } from "./mocks/server";
 
 // =============================================================================
 // Test suite
+// Uses global server from setup.ts - no need for beforeAll/afterAll here
 // =============================================================================
-
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 describe("projectApi", () => {
   describe("list", () => {
@@ -241,7 +114,11 @@ describe("actionApi", () => {
       server.use(
         http.post("/api/projects/:projectId/work/:beadId", async ({ request }) => {
           capturedBody = await request.json();
-          return HttpResponse.json(mockExecutionResult);
+          return HttpResponse.json({
+            output: "Execution completed successfully",
+            state: "completed",
+            exit_code: 0,
+          });
         })
       );
 
@@ -319,7 +196,10 @@ describe("actionApi", () => {
       server.use(
         http.post("/api/projects/:projectId/push-pr", async ({ request }) => {
           capturedBody = await request.json();
-          return HttpResponse.json(mockPushPRResponse);
+          return HttpResponse.json({
+            push: "Everything up-to-date",
+            pr: "https://github.com/user/repo/pull/42",
+          });
         })
       );
 
