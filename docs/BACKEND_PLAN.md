@@ -1,6 +1,10 @@
-# Backend Implementation Plan
+# Backend Implementation Plan (Full Orchestration)
+
+> **Note**: This is the **full orchestration** backend plan. For MVP, see **SIMPLIFIED_PLAN.md**.
+> Use this document as reference when adding Tier 2/3 features from FUTURE_ENHANCEMENTS.md.
 
 **Stack**: FastAPI + Docker SDK + GitPython + Beads CLI
+**Status**: Reference document (Future)
 
 ---
 
@@ -67,7 +71,7 @@ class Settings(BaseSettings):
     max_concurrent_containers: int = 3
 
     # Execution
-    default_execution_timeout: int = 1800  # 30 minutes
+    default_execution_timeout: int = 21600  # 6 hours
     poll_interval: int = 5  # seconds
 
     # Git
@@ -313,9 +317,14 @@ class ProjectDiscovery:
 
 ### 5. `app/services/beads_service.py`
 
+> **Note**: This implementation assumes beads CLI supports `--format=json` output.
+> Verify actual CLI interface with `bd --help` and adjust parsing accordingly.
+> The CLI may use different flags (e.g., `--json` or output JSON by default).
+
 ```python
 import subprocess
 import json
+import re
 from typing import List, Optional
 from pathlib import Path
 
@@ -327,6 +336,7 @@ class BeadsService:
 
     async def list_beads(self, project_path: str, status: Optional[str] = None) -> List[Bead]:
         """List beads for a project"""
+        # NOTE: Verify actual bd CLI flags - may differ from assumed --format=json
         cmd = ["bd", "list", "--format=json"]
 
         if status:
@@ -440,7 +450,7 @@ class BeadsService:
 ### 6. `app/services/context_builder.py` ⭐ NEW
 
 ```python
-from typing import Dict, List
+from typing import Dict, List, Optional
 from pathlib import Path
 import subprocess
 

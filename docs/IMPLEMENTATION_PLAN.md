@@ -305,11 +305,12 @@ async def create_pr(project_id: str, request: PRRequest):
 
 ## Technical Challenges & Solutions
 
-### Challenge: Long-running executions (10+ min)
+### Challenge: Long-running executions (up to 6 hours)
 **Solution**: Background tasks + polling (not WebSockets)
 - Execute in asyncio.create_task()
 - Store state in memory dict
 - Client polls every 5-10s
+- 6 hour timeout for complex tasks
 - Reliable over cellular/VPN
 
 ### Challenge: Container resource management (32GB / 3 containers)

@@ -1,6 +1,11 @@
-# Container Implementation Plan
+# Container Implementation Plan (Full)
+
+> **Note**: This contains the **full container setup** with health monitoring and auto-refresh.
+> For MVP, use the simplified Dockerfile in **SIMPLIFIED_PLAN.md**.
+> Use this document as reference when adding container health features.
 
 **Stack**: Docker + Python Docker SDK
+**Status**: Reference document (use simplified for MVP)
 
 ---
 

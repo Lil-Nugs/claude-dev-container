@@ -42,74 +42,74 @@ I'm on a minipc at home behind Tailscale (also on phone). I want to go on my pho
 
 ## Architecture Decisions
 
-### 3. Container Persistence
+### 1. Container Persistence
 **Choice: A - Long-running project containers**
 - Keep project containers warm for faster task startup
 - Preserve build caches and installed dependencies
 - Implement manual cleanup (can add auto-cleanup per-project later)
 
-### 4. Claude CLI Strategy
+### 2. Claude CLI Strategy
 **Choice: A - Mount host Claude CLI + config**
 - Single Claude installation shared across containers
 - Volume mount `/usr/local/bin/claude` and `~/.claude` config
 - Simpler updates and consistent versioning
 
-### 5. Project Structure
+### 3. Project Structure
 **Choice: A - Workspace directory auto-discovery**
 - Scan `~/projects/` for git repos
 - Auto-discover projects with `.beads/` directories
 - No database needed initially
 - Can upgrade to hybrid with metadata DB later
 
-### 6. Real-time Feedback
+### 4. Real-time Feedback
 **Choice: B - Poll for updates (every 5-10 sec)**
 - Reliable over cellular/VPN when remote
 - Better battery life than WebSockets
 - Works well on PC at home too
 - Shows near-real-time progress without connection issues
 
-### 7. Authentication
+### 5. Authentication
 **Choice: A - Tailscale network = trusted**
 - Zero config - Tailscale membership is authorization
 - No extra login/password needed
 
-### 8. Task Initiation
+### 6. Task Initiation
 **Choice: B - Optional context/instructions**
 - Can add custom instructions when starting a bead
 - Defaults to "just run" if no context provided
 - Good balance of speed and flexibility
 
-### 9. Review Workflow
+### 7. Review Workflow
 **Choice: A - Claude reviews its own work (upgrade to C later)**
 - Fresh Claude session analyzes PR/changes
 - Automatically creates new beads for issues found
 - Start simple, add human-in-the-loop approval later
 
-### 10. Review Trigger
+### 8. Review Trigger
 **Choice: B + C - Manual button + auto before PR**
 - "Review" button available anytime
 - Auto-triggers review before PR creation
 - Can batch review multiple completed beads
 
-### 11. Branch Strategy
+### 9. Branch Strategy
 **Choice: A - Branch per bead**
 - Each bead gets own branch: `beads-xxx-feature-name`
 - Easy to trace PR back to specific bead
 - Multiple beads can be merged into one PR
 
-### 12. PR Creation
+### 10. PR Creation
 **Choice: B - Accumulate work, one PR per session**
 - Group related beads into single PR
 - Ability to create interim PRs for completed chunks
 - Cleaner than one PR per bead
 
-### 13. Container Restrictions
+### 11. Container Restrictions
 **Choice: A - Full network + package manager access**
 - Can install deps, hit package registries, research docs
 - Resource limits: 4 CPU cores, 8GB RAM per container
 - Can run ~3 concurrent containers with 32GB total
 
-### 14. Container Lifecycle
+### 12. Container Lifecycle
 **Choice: A - Manual cleanup (add auto per-project later)**
 - Keep containers running until manually deleted
 - Fast re-use, preserves caches
