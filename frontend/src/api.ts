@@ -4,6 +4,9 @@ import type {
   ExecutionResult,
   ProgressInfo,
   AttachInfo,
+  WorkRequest,
+  PushPRRequest,
+  PushPRResponse,
 } from "./types";
 
 const API_BASE = "/api";
@@ -47,57 +50,62 @@ async function fetchApi<T>(
 
 /**
  * Project API endpoints
+ * Matches SIMPLIFIED_PLAN.md specification
  */
 export const projectApi = {
+  /** GET /api/projects - List projects in ~/projects/ */
   list: (): Promise<Project[]> => fetchApi<Project[]>("/projects"),
 
-  get: (id: string): Promise<Project> => fetchApi<Project>(`/projects/${id}`),
-
-  scan: (path: string): Promise<Project> =>
-    fetchApi<Project>("/projects/scan", {
-      method: "POST",
-      body: JSON.stringify({ path }),
-    }),
+  /** GET /api/projects/{id} - Project details + container status */
+  get: (projectId: string): Promise<Project> =>
+    fetchApi<Project>(`/projects/${projectId}`),
 };
 
 /**
  * Beads API endpoints
  */
 export const beadsApi = {
-  list: (projectId: string): Promise<Bead[]> =>
-    fetchApi<Bead[]>(`/projects/${projectId}/beads`),
-
-  get: (projectId: string, beadId: string): Promise<Bead> =>
-    fetchApi<Bead>(`/projects/${projectId}/beads/${beadId}`),
-
-  ready: (projectId: string): Promise<Bead[]> =>
-    fetchApi<Bead[]>(`/projects/${projectId}/beads/ready`),
+  /** GET /api/projects/{id}/beads - List beads (calls bd list) */
+  list: (projectId: string, status?: string): Promise<Bead[]> => {
+    const params = status ? `?status=${encodeURIComponent(status)}` : "";
+    return fetchApi<Bead[]>(`/projects/${projectId}/beads${params}`);
+  },
 };
 
 /**
- * Execution API endpoints
+ * Action API endpoints
+ * These are the core actions from SIMPLIFIED_PLAN.md
  */
-export const executionApi = {
-  run: (
+export const actionApi = {
+  /** POST /api/projects/{id}/work/{bead_id} - Run Claude on bead */
+  work: (
     projectId: string,
-    command: string
-  ): Promise<{ execution_id: string }> =>
-    fetchApi<{ execution_id: string }>(`/projects/${projectId}/execute`, {
+    beadId: string,
+    request?: WorkRequest
+  ): Promise<ExecutionResult> =>
+    fetchApi<ExecutionResult>(`/projects/${projectId}/work/${beadId}`, {
       method: "POST",
-      body: JSON.stringify({ command }),
+      body: JSON.stringify(request ?? {}),
     }),
 
-  progress: (executionId: string): Promise<ProgressInfo> =>
-    fetchApi<ProgressInfo>(`/executions/${executionId}/progress`),
-
-  result: (executionId: string): Promise<ExecutionResult> =>
-    fetchApi<ExecutionResult>(`/executions/${executionId}/result`),
-
-  cancel: (executionId: string): Promise<void> =>
-    fetchApi<void>(`/executions/${executionId}/cancel`, {
+  /** POST /api/projects/{id}/review - Run Claude review */
+  review: (projectId: string): Promise<ExecutionResult> =>
+    fetchApi<ExecutionResult>(`/projects/${projectId}/review`, {
       method: "POST",
     }),
 
-  attach: (executionId: string): Promise<AttachInfo> =>
-    fetchApi<AttachInfo>(`/executions/${executionId}/attach`),
+  /** POST /api/projects/{id}/push-pr - Git push + gh pr create */
+  pushPR: (projectId: string, request?: PushPRRequest): Promise<PushPRResponse> =>
+    fetchApi<PushPRResponse>(`/projects/${projectId}/push-pr`, {
+      method: "POST",
+      body: JSON.stringify(request ?? {}),
+    }),
+
+  /** GET /api/projects/{id}/progress - Get current execution progress */
+  getProgress: (projectId: string): Promise<ProgressInfo> =>
+    fetchApi<ProgressInfo>(`/projects/${projectId}/progress`),
+
+  /** GET /api/projects/{id}/attach - Get container ID for docker exec */
+  getAttachInfo: (projectId: string): Promise<AttachInfo> =>
+    fetchApi<AttachInfo>(`/projects/${projectId}/attach`),
 };

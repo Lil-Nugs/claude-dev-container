@@ -15,6 +15,23 @@ class ExecutionState(str, Enum):
     cancelled = "cancelled"
 
 
+class BeadStatus(str, Enum):
+    """Status of a bead/issue."""
+
+    open = "open"
+    in_progress = "in_progress"
+    closed = "closed"
+
+
+class BeadType(str, Enum):
+    """Type of a bead/issue."""
+
+    task = "task"
+    bug = "bug"
+    feature = "feature"
+    epic = "epic"
+
+
 class Project(BaseModel):
     """Project model representing a workspace project."""
 
@@ -29,10 +46,10 @@ class Bead(BaseModel):
 
     id: str = Field(..., description="Unique bead identifier")
     title: str = Field(..., description="Bead title")
-    status: str = Field(..., description="Current status")
+    status: BeadStatus = Field(..., description="Current status")
     description: Optional[str] = Field(default=None, description="Bead description")
-    priority: Optional[str] = Field(default=None, description="Priority level")
-    type: Optional[str] = Field(default=None, description="Bead type (feature, bug, etc.)")
+    priority: int = Field(default=2, description="Priority level (0-4, lower is higher priority)")
+    type: BeadType = Field(default=BeadType.task, description="Bead type")
 
 
 class ExecutionResult(BaseModel):
@@ -41,3 +58,31 @@ class ExecutionResult(BaseModel):
     output: str = Field(..., description="Command output")
     state: ExecutionState = Field(..., description="Execution state")
     exit_code: int = Field(..., description="Exit code from execution")
+
+
+class ProgressInfo(BaseModel):
+    """Progress information for a running execution."""
+
+    running: bool = Field(..., description="Whether execution is still running")
+    output: str = Field(default="", description="Current output")
+    recent: str = Field(default="", description="Recent output lines")
+    bytes: int = Field(default=0, description="Total bytes of output")
+
+
+class AttachInfo(BaseModel):
+    """Information for attaching to a container."""
+
+    container_id: str = Field(..., description="Docker container ID")
+    command: str = Field(..., description="Command to run for attachment")
+
+
+class WorkRequest(BaseModel):
+    """Request body for work endpoint."""
+
+    context: Optional[str] = Field(default=None, description="Additional context for the work")
+
+
+class PushPRRequest(BaseModel):
+    """Request body for push-pr endpoint."""
+
+    title: Optional[str] = Field(default=None, description="Optional PR title")

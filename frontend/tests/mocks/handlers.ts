@@ -1,5 +1,12 @@
 import { http, HttpResponse } from "msw";
-import type { Project, Bead, ExecutionResult, ProgressInfo } from "../../src/types";
+import type {
+  Project,
+  Bead,
+  ExecutionResult,
+  ProgressInfo,
+  AttachInfo,
+  PushPRResponse,
+} from "../../src/types";
 
 // Mock data
 const mockProjects: Project[] = [
@@ -51,74 +58,81 @@ const mockProgressInfo: ProgressInfo = {
   bytes: 1024,
 };
 
-// Request handlers
+const mockAttachInfo: AttachInfo = {
+  container_id: "container-123",
+  command: "docker exec -it container-123 /bin/bash",
+};
+
+const mockPushPRResponse: PushPRResponse = {
+  push: "Everything up-to-date",
+  pr: "https://github.com/user/repo/pull/42",
+};
+
+// Request handlers matching SIMPLIFIED_PLAN.md API structure
 export const handlers = [
-  // Projects
+  // =============================================================================
+  // Project Endpoints
+  // =============================================================================
+
+  // GET /api/projects - List projects
   http.get("/api/projects", () => {
     return HttpResponse.json(mockProjects);
   }),
 
-  http.get("/api/projects/:id", ({ params }) => {
-    const project = mockProjects.find((p) => p.id === params.id);
+  // GET /api/projects/:projectId - Get project details
+  http.get("/api/projects/:projectId", ({ params }) => {
+    const project = mockProjects.find((p) => p.id === params["projectId"]);
     if (!project) {
       return new HttpResponse(null, { status: 404 });
     }
     return HttpResponse.json(project);
   }),
 
-  http.post("/api/projects/scan", async ({ request }) => {
-    const body = (await request.json()) as { path: string };
-    const newProject: Project = {
-      id: `proj-${Date.now()}`,
-      name: body.path.split("/").pop() ?? "unknown",
-      path: body.path,
-      has_beads: false,
-    };
-    return HttpResponse.json(newProject);
-  }),
+  // =============================================================================
+  // Beads Endpoints
+  // =============================================================================
 
-  // Beads
-  http.get("/api/projects/:projectId/beads", ({ params }) => {
-    const beads = mockBeads[params.projectId as string] ?? [];
+  // GET /api/projects/:projectId/beads - List beads
+  http.get("/api/projects/:projectId/beads", ({ params, request }) => {
+    const url = new URL(request.url);
+    const statusFilter = url.searchParams.get("status");
+    const projectId = params["projectId"] as string;
+
+    let beads = mockBeads[projectId] ?? [];
+
+    if (statusFilter) {
+      beads = beads.filter((b) => b.status === statusFilter);
+    }
+
     return HttpResponse.json(beads);
   }),
 
-  http.get("/api/projects/:projectId/beads/:beadId", ({ params }) => {
-    const projectBeads = mockBeads[params.projectId as string] ?? [];
-    const bead = projectBeads.find((b) => b.id === params.beadId);
-    if (!bead) {
-      return new HttpResponse(null, { status: 404 });
-    }
-    return HttpResponse.json(bead);
-  }),
+  // =============================================================================
+  // Action Endpoints
+  // =============================================================================
 
-  http.get("/api/projects/:projectId/beads/ready", ({ params }) => {
-    const projectBeads = mockBeads[params.projectId as string] ?? [];
-    const readyBeads = projectBeads.filter((b) => b.status === "open");
-    return HttpResponse.json(readyBeads);
-  }),
-
-  // Executions
-  http.post("/api/projects/:projectId/execute", () => {
-    return HttpResponse.json({ execution_id: `exec-${Date.now()}` });
-  }),
-
-  http.get("/api/executions/:executionId/progress", () => {
-    return HttpResponse.json(mockProgressInfo);
-  }),
-
-  http.get("/api/executions/:executionId/result", () => {
+  // POST /api/projects/:projectId/work/:beadId - Run Claude on bead
+  http.post("/api/projects/:projectId/work/:beadId", () => {
     return HttpResponse.json(mockExecutionResult);
   }),
 
-  http.post("/api/executions/:executionId/cancel", () => {
-    return new HttpResponse(null, { status: 204 });
+  // POST /api/projects/:projectId/review - Run Claude review
+  http.post("/api/projects/:projectId/review", () => {
+    return HttpResponse.json(mockExecutionResult);
   }),
 
-  http.get("/api/executions/:executionId/attach", () => {
-    return HttpResponse.json({
-      container_id: "container-123",
-      command: "docker exec -it container-123 /bin/bash",
-    });
+  // POST /api/projects/:projectId/push-pr - Git push + gh pr create
+  http.post("/api/projects/:projectId/push-pr", () => {
+    return HttpResponse.json(mockPushPRResponse);
+  }),
+
+  // GET /api/projects/:projectId/progress - Get execution progress
+  http.get("/api/projects/:projectId/progress", () => {
+    return HttpResponse.json(mockProgressInfo);
+  }),
+
+  // GET /api/projects/:projectId/attach - Get container attach info
+  http.get("/api/projects/:projectId/attach", () => {
+    return HttpResponse.json(mockAttachInfo);
   }),
 ];

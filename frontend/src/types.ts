@@ -1,6 +1,12 @@
 // Execution states
 export type ExecutionState = "completed" | "blocked" | "failed" | "cancelled";
 
+// Bead status
+export type BeadStatus = "open" | "in_progress" | "closed";
+
+// Bead type
+export type BeadType = "task" | "bug" | "feature" | "epic";
+
 // API Response types
 export interface Project {
   id: string;
@@ -12,10 +18,10 @@ export interface Project {
 export interface Bead {
   id: string;
   title: string;
-  status: "open" | "in_progress" | "closed";
+  status: BeadStatus;
   description?: string;
   priority: number;
-  type: "task" | "bug" | "feature" | "epic";
+  type: BeadType;
 }
 
 export interface ExecutionResult {
@@ -34,4 +40,19 @@ export interface ProgressInfo {
 export interface AttachInfo {
   container_id: string;
   command: string;
+}
+
+// Request types
+export interface WorkRequest {
+  context?: string;
+}
+
+export interface PushPRRequest {
+  title?: string;
+}
+
+// Response types for actions
+export interface PushPRResponse {
+  push: string;
+  pr: string;
 }
