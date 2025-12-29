@@ -123,10 +123,35 @@ After creating beads, provide a summary:
 ## Important Notes
 
 - Do NOT fix issues directly - create beads for them
-- Do NOT push to remote yet
 - Focus on objective quality issues, not style preferences
 - If implementation is solid, say so - don't invent problems
 - Critical/security issues should be flagged clearly
+
+### 7. Create PR and Return to Main (if ready)
+
+If the review passes with no critical issues:
+
+```bash
+# Push the branch and create PR
+git push -u origin $(git branch --show-current)
+gh pr create --title "<feature summary>" --body "$(cat <<'EOF'
+## Summary
+- <key changes>
+
+## Test plan
+- [ ] Unit tests pass
+- [ ] Manual testing completed
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+
+# IMPORTANT: Switch back to main after PR is created
+git checkout main
+git pull
+```
+
+This ensures you're not left on a deleted branch after the PR is merged.
 
 ## Session Close Checklist
 
@@ -136,5 +161,7 @@ Before saying you're done:
 [ ] Tests executed and results documented
 [ ] Fix beads created for all found issues
 [ ] bd sync (commits bead changes)
+[ ] PR created (if ready)
+[ ] Switched back to main branch
 [ ] Summary provided to user
 ```
