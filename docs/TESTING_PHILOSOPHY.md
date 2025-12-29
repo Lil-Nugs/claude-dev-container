@@ -152,6 +152,146 @@ describe('BeadList', () => {
 });
 ```
 
+## Anti-Patterns to Avoid
+
+### 1. Trivial Assertions
+
+Testing obvious happy paths that would pass with trivial implementations.
+
+```python
+# BAD: What bug would this catch?
+def test_create_container_works():
+    result = container_service.create("/valid/path")
+    assert result is not None
+
+# GOOD: Test the interesting cases
+def test_create_container_rejects_nonexistent_path():
+    with pytest.raises(ValueError, match="path does not exist"):
+        container_service.create("/nonexistent/path")
+
+def test_create_container_rejects_path_without_git():
+    with pytest.raises(ValueError, match="not a git repository"):
+        container_service.create("/path/without/.git")
+```
+
+### 2. Duplicate Error Path Testing
+
+Testing the same logic multiple ways instead of once with table-driven tests.
+
+```python
+# BAD: Repetitive individual tests
+def test_priority_0(): assert map_priority(0) == "critical"
+def test_priority_1(): assert map_priority(1) == "high"
+def test_priority_2(): assert map_priority(2) == "medium"
+
+# GOOD: Table-driven
+@pytest.mark.parametrize("input,expected", [
+    (0, "critical"),
+    (1, "high"),
+    (2, "medium"),
+    (99, "unknown"),  # boundary case
+])
+def test_priority_mapping(input, expected):
+    assert map_priority(input) == expected
+```
+
+### 3. I/O Heavy Tests Without Mocking
+
+Unit tests that execute real commands or heavy I/O when they could mock.
+
+```python
+# BAD: Actually runs Docker in unit test
+def test_container_creation():
+    result = subprocess.run(["docker", "run", ...])
+    assert result.returncode == 0
+
+# GOOD: Mock the execution
+def test_container_creation(mock_docker):
+    mock_docker.containers.run.return_value = Mock(id="abc123")
+    result = container_service.create("/path")
+    assert result == "abc123"
+    mock_docker.containers.run.assert_called_once()
+```
+
+### 4. Testing Implementation, Not Behavior
+
+Tests that break when you refactor, even though behavior is unchanged.
+
+```typescript
+// BAD: Tests internal state
+it('should have 3 items in internal cache', () => {
+  component.loadData();
+  expect(component._internalCache.length).toBe(3);
+});
+
+// GOOD: Tests observable behavior
+it('should display 3 items after loading', () => {
+  render(<BeadList />);
+  expect(screen.getAllByRole('listitem')).toHaveLength(3);
+});
+```
+
+### 5. Missing Boundary Tests
+
+Testing known-good values but not boundaries and invalid inputs.
+
+```python
+# BAD: Only tests middle values
+def test_priority_1(): assert validate_priority(1) is True
+def test_priority_2(): assert validate_priority(2) is True
+
+# GOOD: Tests boundaries and invalid
+@pytest.mark.parametrize("value,valid", [
+    (-1, False),  # invalid - below range
+    (0, True),    # boundary - min valid
+    (4, True),    # boundary - max valid
+    (5, False),   # boundary - first invalid
+    (None, False), # edge case
+])
+def test_priority_validation(value, valid):
+    assert validate_priority(value) == valid
+```
+
+---
+
+## What to Test (Priority Matrix)
+
+| Priority | What | Why | Examples |
+|----------|------|-----|----------|
+| **High** | Core business logic | Users depend on this | Container lifecycle, bead operations |
+| **High** | Error paths that corrupt data | Data loss is catastrophic | Database operations, file writes |
+| **Medium** | Edge cases from bugs | Discovered through real issues | Input validation, state transitions |
+| **Low** | Display/formatting | Visual output, manually verified | Table formatting, color output |
+
+---
+
+## Target Metrics
+
+### Test-to-Code Ratio
+
+| Ratio | Interpretation | When Appropriate |
+|-------|----------------|------------------|
+| 0.5:1 | Light coverage | Utilities, prototypes |
+| 1:1 | Solid coverage | **Our target for most code** |
+| 1.5:1 | Heavy coverage | Critical/security-sensitive |
+| 2:1+ | Over-engineered | Likely maintenance burden |
+
+### Time Budgets
+
+| Tier | Target | Hard Limit |
+|------|--------|------------|
+| Unit tests | < 5 seconds | 10 seconds |
+| Smoke integration | < 10 seconds | 20 seconds |
+| Full integration | < 30 seconds | 60 seconds |
+| E2E | < 5 minutes | 10 minutes |
+
+If tests exceed hard limits, investigate:
+- Unnecessary I/O that could be mocked
+- Tests that belong in a different tier
+- Shared setup that could be optimized
+
+---
+
 ## Testing and Agents
 
 Agents follow the same testing requirements as human developers:
@@ -195,5 +335,6 @@ jobs:
 
 ## See Also
 
-- [TESTING_GUIDE.md](./TESTING_GUIDE.md) - How to write and run tests (for agents)
+- [TESTING_GUIDE.md](./TESTING_GUIDE.md) - How to write and run tests
+- [../.claude/test-strategy.md](../.claude/test-strategy.md) - Quick reference for agents
 - [SIMPLIFIED_PLAN.md](./SIMPLIFIED_PLAN.md) - Test stack details in MVP spec
