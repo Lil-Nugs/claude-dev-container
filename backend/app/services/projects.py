@@ -17,35 +17,69 @@ class ProjectService:
         """
         self.workspace_path = workspace_path or settings.workspace_path
 
-    async def list_projects(self) -> list[Project]:
+    def list_projects(self) -> list[Project]:
         """List all projects in the workspace.
 
-        Returns:
-            List of Project objects found in the workspace.
-        """
-        # TODO: Implement project scanning logic
-        raise NotImplementedError("Project listing not yet implemented")
+        Scans the workspace directory for git repositories. A directory is
+        considered a project if it contains a .git subdirectory.
 
-    async def get_project(self, project_id: str) -> Project | None:
+        Returns:
+            List of Project objects found in the workspace, sorted by name.
+        """
+        workspace = Path(self.workspace_path).expanduser()
+        if not workspace.exists():
+            return []
+
+        projects = []
+        for item in workspace.iterdir():
+            if not item.is_dir():
+                continue
+            if not (item / ".git").exists():
+                continue
+
+            projects.append(
+                Project(
+                    id=item.name,
+                    name=item.name,
+                    path=str(item),
+                    has_beads=(item / ".beads").exists(),
+                )
+            )
+
+        return sorted(projects, key=lambda p: p.name)
+
+    def get_project(self, project_id: str) -> Project | None:
         """Get a specific project by ID.
 
         Args:
-            project_id: The project identifier.
+            project_id: The project identifier (directory name).
 
         Returns:
             Project if found, None otherwise.
         """
-        # TODO: Implement project retrieval logic
-        raise NotImplementedError("Project retrieval not yet implemented")
+        workspace = Path(self.workspace_path).expanduser()
+        project_path = workspace / project_id
 
-    async def check_beads_initialized(self, project_path: Path) -> bool:
+        if not project_path.exists() or not project_path.is_dir():
+            return None
+        if not (project_path / ".git").exists():
+            return None
+
+        return Project(
+            id=project_id,
+            name=project_id,
+            path=str(project_path),
+            has_beads=(project_path / ".beads").exists(),
+        )
+
+    def check_beads_initialized(self, project_path: Path) -> bool:
         """Check if a project has beads initialized.
 
         Args:
             project_path: Path to the project directory.
 
         Returns:
-            True if beads is initialized, False otherwise.
+            True if beads is initialized (.beads directory exists), False otherwise.
         """
-        # TODO: Implement beads initialization check
-        raise NotImplementedError("Beads check not yet implemented")
+        path = Path(project_path)
+        return (path / ".beads").exists()

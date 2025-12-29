@@ -7,7 +7,6 @@ from app.models import (
     Project,
     Bead,
     ExecutionResult,
-    ExecutionState,
     ProgressInfo,
     AttachInfo,
     WorkRequest,
