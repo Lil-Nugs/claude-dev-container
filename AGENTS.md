@@ -2,6 +2,19 @@
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
+## Project Overview
+
+This is a planning repository for **Claude Dev Container** - a mobile-first system for managing software projects with AI-powered agent execution in isolated Docker containers.
+
+**Key Documentation:**
+- `docs/DESIGN_DECISIONS.md` - Architecture choices (12 key decisions)
+- `docs/AGENT_WORKFLOW.md` - Execution workflow and stopping conditions
+- `docs/AGENT_CHALLENGES.md` - 12 critical issues that must be addressed
+- `docs/BACKEND_PLAN.md` - FastAPI backend implementation (~18 files)
+- `docs/FRONTEND_PLAN.md` - React PWA implementation (~17 files)
+- `docs/CONTAINER_PLAN.md` - Docker setup and management
+- `docs/IMPLEMENTATION_SUMMARY.md` - Overview and next steps
+
 ## Quick Reference
 
 ```bash
@@ -51,4 +64,13 @@ bd sync               # Sync with git
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
+
+## Implementation Status
+
+**Current Phase**: Planning complete, ready for beads issue creation
+
+**Next Steps**:
+1. Review docs (especially AGENT_CHALLENGES.md)
+2. Create beads issues from IMPLEMENTATION_SUMMARY.md
+3. Start with Phase 0 (critical fixes)
 

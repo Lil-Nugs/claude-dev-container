@@ -10,7 +10,7 @@ This document identifies challenges specific to having AI agents (Claude) execut
 
 ## Critical Issues
 
-### 1. Workflow Instructions & Stopping Conditions ⚠️
+### §1. Workflow Instructions & Stopping Conditions ⚠️
 
 **Issue**: Inner Claude CLI has access to all project files (mounted repository), but needs **clear instructions** about:
 - What success looks like (when to stop)
@@ -98,7 +98,7 @@ Begin work now.
 
 ---
 
-### 2. Context Enhancement (Optional)
+### §2. Context Enhancement (Optional)
 
 **Note**: Agent has full file access to repository. This is about **enriching the initial prompt** with helpful metadata.
 
@@ -137,7 +137,7 @@ class ContextBuilder:
 
 ---
 
-### 3. Review Parsing is Fragile ⚠️
+### §3. Review Parsing is Fragile ⚠️
 
 **Issue**: Expecting Claude to output exact format is unreliable.
 
@@ -217,7 +217,7 @@ Output JSON array of issues.
 
 ---
 
-### 4. No Error Recovery Mechanism ⚠️
+### §4. No Error Recovery Mechanism ⚠️
 
 **Issue**: Agents frequently get stuck, ask questions, or fail.
 
@@ -276,7 +276,7 @@ POST /executions/{id}/retry - Retry with modifications
 
 ---
 
-### 5. Git Conflicts & Race Conditions ⚠️
+### §5. Git Conflicts & Race Conditions ⚠️
 
 **Issue**: Multiple containers running simultaneously can cause conflicts.
 
@@ -331,7 +331,7 @@ async def create_execution_branch(project: Project, bead: Bead) -> str:
 
 ---
 
-### 6. Missing Git Credentials ⚠️
+### §6. Missing Git Credentials ⚠️
 
 **Issue**: Container can't push to GitHub without credentials.
 
@@ -391,7 +391,7 @@ def create_container(project: Project) -> Container:
 
 ---
 
-### 7. Execution Timeout
+### §7. Execution Timeout
 
 **Issue**: Need timeout to prevent runaway executions, but must be **long enough** for complex tasks
 
@@ -457,7 +457,7 @@ function ExecutionProgress({ executionId }: Props) {
 
 ---
 
-### 8. Beads Dependency Checking Missing
+### §8. Beads Dependency Checking Missing
 
 **Issue**: Could start work on bead that's blocked by dependencies
 
@@ -502,7 +502,7 @@ async def execute_bead(project_id: str, bead_id: str, request: ExecuteRequest):
 
 ---
 
-### 9. No Code Quality Gates ⚠️
+### §9. No Code Quality Gates ⚠️
 
 **Issue**: Agent marks work complete even if tests fail
 
@@ -581,7 +581,7 @@ build:
 
 ---
 
-### 10. Claude CLI State Management
+### §10. Claude CLI State Management
 
 **Issue**: Mounts `~/.claude` as read-only, but Claude CLI needs to write session state
 
@@ -629,7 +629,7 @@ async def cleanup_container(container_id: str):
 
 ---
 
-### 11. Prompt Injection Vulnerability ⚠️
+### §11. Prompt Injection Vulnerability ⚠️
 
 **Issue**: User's "context" field goes directly into prompt
 
@@ -704,7 +704,7 @@ resources = {
 
 ---
 
-### 12. Container State Drift
+### §12. Container State Drift
 
 **Issue**: Long-running containers accumulate stale state
 

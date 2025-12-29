@@ -313,9 +313,14 @@ class ProjectDiscovery:
 
 ### 5. `app/services/beads_service.py`
 
+> **Note**: This implementation assumes beads CLI supports `--format=json` output.
+> Verify actual CLI interface with `bd --help` and adjust parsing accordingly.
+> The CLI may use different flags (e.g., `--json` or output JSON by default).
+
 ```python
 import subprocess
 import json
+import re
 from typing import List, Optional
 from pathlib import Path
 
@@ -327,6 +332,7 @@ class BeadsService:
 
     async def list_beads(self, project_path: str, status: Optional[str] = None) -> List[Bead]:
         """List beads for a project"""
+        # NOTE: Verify actual bd CLI flags - may differ from assumed --format=json
         cmd = ["bd", "list", "--format=json"]
 
         if status:
@@ -440,7 +446,7 @@ class BeadsService:
 ### 6. `app/services/context_builder.py` ⭐ NEW
 
 ```python
-from typing import Dict, List
+from typing import Dict, List, Optional
 from pathlib import Path
 import subprocess
 

@@ -30,32 +30,31 @@ Restructured into **5 focused documents**:
 
 These will cause **basic functionality to break**:
 
-1. **Context Starvation** (AGENT_CHALLENGES.md:34-136)
+1. **Workflow Instructions Missing** (AGENT_CHALLENGES.md §1)
    - Current plan: Prompt is just `bead.title + bead.description`
-   - **Problem**: Agent has zero project context, previous attempts, or constraints
-   - **Solution**: New `ContextBuilder` service that injects:
-     - Project README, tech stack, structure
-     - Previous execution logs
-     - Git history and current state
-     - Test commands and quality gates
-   - **Impact**: Without this, agents will constantly ask clarifying questions or fail
+   - **Problem**: Agent has no clear workflow, stopping conditions, or constraints
+   - **Solution**: Enhanced prompt template with:
+     - Clear workflow steps (implement → test → commit → push)
+     - Explicit stopping conditions (success, blocked, timeout)
+     - Retry limits and error handling rules
+   - **Impact**: Without this, agents run forever or stop at wrong times
 
-2. **Git Credentials Missing** (AGENT_CHALLENGES.md:337-396)
+2. **Git Credentials Missing** (AGENT_CHALLENGES.md §6)
    - **Problem**: Containers can't push to GitHub (no credentials mounted)
    - **Solution**: Mount SSH keys read-only OR use GitHub token env var
    - **Impact**: Can't push branches, blocking entire PR workflow
 
-3. **Execution Timeout Missing** (AGENT_CHALLENGES.md:398-462)
+3. **Execution Timeout Missing** (AGENT_CHALLENGES.md)
    - **Problem**: No timeout → runaway executions blocking resources forever
-   - **Solution**: 30-minute default timeout + cleanup logic + cancel endpoint
+   - **Solution**: 6-hour default timeout + cleanup logic + cancel endpoint
    - **Impact**: One stuck execution can block all future work
 
-4. **No Quality Gates** (AGENT_CHALLENGES.md:564-656)
+4. **No Quality Gates** (AGENT_CHALLENGES.md §9)
    - **Problem**: Agent can mark work "done" even if tests fail
    - **Solution**: Mandatory test/lint/build checks before closing bead
    - **Impact**: Broken code gets merged, accumulates tech debt
 
-5. **Dependency Validation Missing** (AGENT_CHALLENGES.md:464-531)
+5. **Dependency Validation Missing** (AGENT_CHALLENGES.md §8)
    - **Problem**: Could execute bead that's blocked by unfinished dependencies
    - **Solution**: Check `bd ready` before execution
    - **Impact**: Wasted execution cycles, broken code
@@ -64,20 +63,20 @@ These will cause **basic functionality to break**:
 
 ### ⚠️ Medium-Priority Issues (Causes Frequent Failures)
 
-6. **Review Parsing is Fragile** (AGENT_CHALLENGES.md:138-263)
+6. **Review Parsing is Fragile** (AGENT_CHALLENGES.md §3)
    - Expects exact format: `BEAD: [title] | [description] | P[0-4]`
    - Claude won't follow this reliably
    - **Solution**: JSON output + fallback parsing strategies
 
-7. **No Error Recovery** (AGENT_CHALLENGES.md:265-335)
+7. **No Error Recovery** (AGENT_CHALLENGES.md §4)
    - Agent gets stuck asking questions → no human can respond
    - **Solution**: Pause/resume system + input channel
 
-8. **Git Race Conditions** (AGENT_CHALLENGES.md:337-396)
+8. **Git Race Conditions** (AGENT_CHALLENGES.md §5)
    - Multiple containers running `bd sync` → conflicts
    - **Solution**: Distributed locking per project
 
-9. **Claude CLI State** (AGENT_CHALLENGES.md:658-697)
+9. **Claude CLI State** (AGENT_CHALLENGES.md §10)
    - Mounted read-only but needs to write session state
    - **Solution**: Per-container writable config directory
 
@@ -85,8 +84,8 @@ These will cause **basic functionality to break**:
 
 ### 🛡️ Security/UX Issues (Important but not blocking)
 
-10. **Prompt Injection** (AGENT_CHALLENGES.md:699-798)
-11. **Container State Drift** (AGENT_CHALLENGES.md:800-866)
+10. **Prompt Injection** (AGENT_CHALLENGES.md §11)
+11. **Container State Drift** (AGENT_CHALLENGES.md §12)
 
 ---
 
@@ -97,12 +96,12 @@ These will cause **basic functionality to break**:
 **New Service**: `context_builder.py`
 - Assembles comprehensive execution context
 - Detects tech stack, test commands, project structure
-- Formats rich prompt with guidelines
+- Formats rich prompt with workflow guidelines
 - **~250 lines, high complexity**
 
 **Enhanced**: `claude_executor.py`
 - Uses ContextBuilder for prompts
-- Implements timeout + cleanup
+- Implements 6-hour timeout + cleanup
 - Quality gates integration
 - Error detection patterns
 
@@ -138,11 +137,11 @@ These will cause **basic functionality to break**:
 ### Phase 0: Fix Critical Issues ⚠️ NEW
 **Before writing any code**, address these:
 
-1. ✅ Create `ContextBuilder` service (BACKEND_PLAN.md:412-590)
-2. ✅ Add git credential mounting (CONTAINER_PLAN.md:164-192, 274-291)
-3. ✅ Implement execution timeout (BACKEND_PLAN.md - TODO in claude_executor)
-4. ✅ Add quality gates service (BACKEND_PLAN.md - TODO)
-5. ✅ Add dependency validation (BACKEND_PLAN.md - TODO)
+1. ✅ Create `ContextBuilder` service (BACKEND_PLAN.md `context_builder.py`)
+2. ✅ Add git credential mounting (CONTAINER_PLAN.md volumes section)
+3. ✅ Implement execution timeout (6 hours with cleanup)
+4. ✅ Add quality gates service
+5. ✅ Add dependency validation
 
 **Estimated**: 3-4 beads (P0 priority)
 
@@ -354,8 +353,8 @@ Before creating beads, clarify:
 2. **Quality Gates**: Always required or configurable per-project?
    - Recommendation: Start with always-on, add config later
 
-3. **Execution Timeout**: Default 30min acceptable?
-   - Recommendation: Yes, with override option
+3. **Execution Timeout**: 6 hours is the default - allow override?
+   - Recommendation: Yes, per-execution override via API
 
 4. **Container Refresh**: Manual only or auto after 3 days?
    - Recommendation: Manual first, add auto later
