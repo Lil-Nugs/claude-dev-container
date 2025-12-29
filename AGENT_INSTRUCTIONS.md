@@ -40,21 +40,23 @@ claude-dev-container/
 ├── backend/                 # FastAPI backend (Python)
 │   ├── README.md            # Backend overview
 │   ├── app/
-│   │   ├── main.py          # FastAPI app entry
-│   │   ├── routers/         # API endpoints
-│   │   ├── services/        # Business logic
-│   │   └── schemas/         # Pydantic models
+│   │   ├── main.py          # FastAPI app entry + routes
+│   │   ├── models.py        # Pydantic models
+│   │   ├── config.py        # Configuration
+│   │   └── services/        # Business logic
 │   └── tests/
+│       ├── unit/            # Unit tests
+│       ├── integration/     # API tests
+│       └── fixtures/        # Test fixtures
 ├── frontend/                # React PWA (TypeScript)
 │   ├── README.md            # Frontend overview
 │   ├── src/
-│   │   ├── components/      # React components
-│   │   ├── hooks/           # Custom hooks
-│   │   └── api/             # API client
+│   │   ├── App.tsx          # Root component
+│   │   ├── api.ts           # Backend API client
+│   │   ├── types.ts         # TypeScript types
+│   │   └── components/      # React components
 │   └── tests/
-├── docker/                  # Container configuration
-│   ├── README.md            # Container overview
-│   └── Dockerfile
+│       └── mocks/           # MSW mock handlers
 └── examples/                # Workflow examples
 ```
 
@@ -249,27 +251,25 @@ git status                   # Verify clean state
 
 ### Adding a New API Endpoint
 
-1. Add Pydantic schema in `backend/app/schemas/`
+1. Add Pydantic model in `backend/app/models.py`
 2. Add service logic in `backend/app/services/`
-3. Add router in `backend/app/routers/`
-4. Register router in `backend/app/main.py`
-5. Add tests in `backend/tests/`
-6. Update API documentation if needed
+3. Add route in `backend/app/main.py`
+4. Add tests in `backend/tests/`
+5. Update API documentation if needed
 
 ### Adding a New Frontend Component
 
 1. Create component in `frontend/src/components/`
-2. Add types if needed in `frontend/src/types/`
-3. Add hooks if needed in `frontend/src/hooks/`
-4. Add tests alongside component (`*.test.tsx`)
+2. Add types if needed in `frontend/src/types.ts`
+3. Add API calls if needed in `frontend/src/api.ts`
+4. Add tests in `frontend/tests/` (`*.test.tsx`)
 5. Update parent component to use it
 
 ### Adding Container Support
 
-1. Update `docker/Dockerfile` if base image changes
-2. Add configuration in `backend/app/services/container.py`
-3. Test with actual Docker commands
-4. Document any new environment variables
+1. Add/update container logic in `backend/app/services/containers.py`
+2. Test with actual Docker commands
+3. Document any new environment variables
 
 ## Decision Trees
 
