@@ -12,6 +12,8 @@ from app.models import (
     WorkRequest,
     PushPRRequest,
 )
+from app.services.projects import ProjectService
+from app.services.beads import BeadsService
 
 app = FastAPI(
     title="Claude Dev Container",
@@ -29,6 +31,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize services
+project_service = ProjectService()
+
 
 @app.get("/health")
 async def health_check() -> dict[str, str]:
@@ -44,15 +49,16 @@ async def health_check() -> dict[str, str]:
 @app.get("/api/projects")
 async def list_projects() -> list[Project]:
     """List projects in ~/projects/."""
-    # TODO: Implement with ProjectService
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return project_service.list_projects()
 
 
 @app.get("/api/projects/{project_id}")
 async def get_project(project_id: str) -> Project:
     """Get project details + container status."""
-    # TODO: Implement with ProjectService
-    raise HTTPException(status_code=501, detail="Not implemented")
+    project = project_service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project
 
 
 # =============================================================================
@@ -63,8 +69,14 @@ async def get_project(project_id: str) -> Project:
 @app.get("/api/projects/{project_id}/beads")
 async def list_beads(project_id: str, status: str | None = None) -> list[Bead]:
     """List beads for a project (calls bd list)."""
-    # TODO: Implement with BeadsService
-    raise HTTPException(status_code=501, detail="Not implemented")
+    project = project_service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if not project.has_beads:
+        raise HTTPException(status_code=400, detail="Project does not have beads initialized")
+
+    beads_service = BeadsService(project_path=project.path)
+    return beads_service.list_beads(status=status)
 
 
 # =============================================================================
