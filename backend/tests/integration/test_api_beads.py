@@ -221,3 +221,39 @@ class TestBeadsAPI:
                 )
 
         assert response.status_code == 200
+
+    def test_list_beads_valid_status_blocked(
+        self, client: TestClient, mock_workspace: Path
+    ) -> None:
+        """GET /api/projects/{id}/beads?status=blocked returns 200."""
+        mock_result = Mock(
+            returncode=0,
+            stdout="[P1] [blocked] [task] proj-001: Blocked task",
+            stderr="",
+        )
+
+        with patch("app.main.project_service.workspace_path", mock_workspace):
+            with patch("app.services.beads.subprocess.run", return_value=mock_result):
+                response = client.get(
+                    "/api/projects/project-with-beads/beads?status=blocked"
+                )
+
+        assert response.status_code == 200
+
+    def test_list_beads_valid_status_deferred(
+        self, client: TestClient, mock_workspace: Path
+    ) -> None:
+        """GET /api/projects/{id}/beads?status=deferred returns 200."""
+        mock_result = Mock(
+            returncode=0,
+            stdout="[P1] [deferred] [task] proj-001: Deferred task",
+            stderr="",
+        )
+
+        with patch("app.main.project_service.workspace_path", mock_workspace):
+            with patch("app.services.beads.subprocess.run", return_value=mock_result):
+                response = client.get(
+                    "/api/projects/project-with-beads/beads?status=deferred"
+                )
+
+        assert response.status_code == 200

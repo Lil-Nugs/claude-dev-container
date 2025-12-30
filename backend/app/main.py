@@ -72,9 +72,9 @@ async def get_project(project_id: str) -> Project:
 @app.get("/api/projects/{project_id}/beads")
 async def list_beads(
     project_id: str,
-    status: Literal["open", "in_progress", "closed"] | None = Query(
+    status: Literal["open", "in_progress", "blocked", "deferred", "closed"] | None = Query(
         default=None,
-        description="Filter beads by status (open, in_progress, closed)",
+        description="Filter beads by status (open, in_progress, blocked, deferred, closed)",
     ),
 ) -> list[Bead]:
     """List beads for a project (calls bd list)."""
