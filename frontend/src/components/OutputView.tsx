@@ -3,8 +3,8 @@ import type { ExecutionState } from "../types";
 
 interface OutputViewProps {
   output: string;
-  state?: ExecutionState;
-  autoScroll?: boolean;
+  state?: ExecutionState | undefined;
+  autoScroll?: boolean | undefined;
 }
 
 /**

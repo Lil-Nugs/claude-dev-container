@@ -40,9 +40,7 @@ const mockBeads = [
   },
 ];
 
-// SKIPPED: Tests depend on project-card/project-list selectors that don't exist yet
-// See bead: claude-dev-container-8ex (Fix E2E tests: Add missing data-testid attributes)
-test.describe.skip("Project Selection", () => {
+test.describe("Project Selection", () => {
   test.beforeEach(async ({ page }) => {
     // Mock API endpoints
     await page.route("/api/projects", async (route) => {
