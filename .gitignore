@@ -31,6 +31,7 @@ yarn-error.log*
 # Build outputs
 *.log
 *.local
+dev-dist/
 
 # IDE
 .idea/
