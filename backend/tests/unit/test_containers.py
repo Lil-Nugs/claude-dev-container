@@ -200,9 +200,6 @@ class TestContainerService:
         self, service: ContainerService, tmp_path: Path
     ) -> None:
         """Volume mounts include ~/.gitconfig if it exists."""
-        home = Path.home()
-        gitconfig = home / ".gitconfig"
-
         # Create a mock gitconfig file
         mock_gitconfig = tmp_path / ".gitconfig"
         mock_gitconfig.touch()
