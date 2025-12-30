@@ -3,8 +3,11 @@
 import shlex
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.models import (
     AttachInfo,
@@ -19,11 +22,18 @@ from app.services.beads import BeadsService
 from app.services.containers import ContainerService
 from app.services.projects import ProjectService
 
+# Initialize rate limiter with in-memory storage (default)
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(
     title="Claude Dev Container",
     description="Backend API for Claude Dev Container PWA",
     version="0.1.0",
 )
+
+# Add rate limiter to app state and exception handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS for PWA - allow all origins without credentials
 # For production, specify exact origins if credentials are needed
@@ -52,13 +62,15 @@ async def health_check() -> dict[str, str]:
 
 
 @app.get("/api/projects")
-async def list_projects() -> list[Project]:
+@limiter.limit("60/minute")
+async def list_projects(request: Request) -> list[Project]:
     """List projects in ~/projects/."""
     return project_service.list_projects()
 
 
 @app.get("/api/projects/{project_id}")
-async def get_project(project_id: str) -> Project:
+@limiter.limit("60/minute")
+async def get_project(request: Request, project_id: str) -> Project:
     """Get project details + container status."""
     project = project_service.get_project(project_id)
     if not project:
@@ -72,7 +84,9 @@ async def get_project(project_id: str) -> Project:
 
 
 @app.get("/api/projects/{project_id}/beads")
+@limiter.limit("60/minute")
 async def list_beads(
+    request: Request,
     project_id: str,
     status: (
         Literal["open", "in_progress", "blocked", "deferred", "closed"] | None
@@ -100,10 +114,12 @@ async def list_beads(
 
 
 @app.post("/api/projects/{project_id}/work/{bead_id}")
+@limiter.limit("10/minute")
 async def work_on_bead(
+    request: Request,
     project_id: str,
     bead_id: str,
-    request: WorkRequest | None = None,
+    body: WorkRequest | None = None,
 ) -> ExecutionResult:
     """Run Claude on a bead.
 
@@ -129,8 +145,8 @@ async def work_on_bead(
 
     # Build prompt for Claude
     prompt = f"/implement-bead {bead_id}"
-    if request and request.context:
-        prompt += f"\n\nAdditional context: {request.context}"
+    if body and body.context:
+        prompt += f"\n\nAdditional context: {body.context}"
 
     # Execute Claude in container
     try:
@@ -143,7 +159,8 @@ async def work_on_bead(
 
 
 @app.post("/api/projects/{project_id}/review")
-async def review_work(project_id: str) -> ExecutionResult:
+@limiter.limit("10/minute")
+async def review_work(request: Request, project_id: str) -> ExecutionResult:
     """Run Claude review on current branch.
 
     Ensures a container is running for the project, then executes Claude CLI
@@ -171,9 +188,11 @@ async def review_work(project_id: str) -> ExecutionResult:
 
 
 @app.post("/api/projects/{project_id}/push-pr")
+@limiter.limit("10/minute")
 async def push_and_create_pr(
+    request: Request,
     project_id: str,
-    request: PushPRRequest | None = None,
+    body: PushPRRequest | None = None,
 ) -> dict[str, str]:
     """Git push + gh pr create.
 
@@ -213,7 +232,7 @@ async def push_and_create_pr(
             )
 
         # Create PR with gh CLI
-        pr_title = request.title if request and request.title else ""
+        pr_title = body.title if body and body.title else ""
         if pr_title:
             safe_title = shlex.quote(pr_title)
             pr_cmd = f"gh pr create --title {safe_title} --fill"
@@ -249,7 +268,8 @@ async def push_and_create_pr(
 
 
 @app.get("/api/projects/{project_id}/progress")
-async def get_progress(project_id: str) -> ProgressInfo:
+@limiter.limit("120/minute")
+async def get_progress(request: Request, project_id: str) -> ProgressInfo:
     """Get current execution progress (for refresh button during long runs).
 
     Returns the current output buffer and running status for polling
@@ -265,7 +285,8 @@ async def get_progress(project_id: str) -> ProgressInfo:
 
 
 @app.get("/api/projects/{project_id}/attach")
-async def get_attach_info(project_id: str) -> AttachInfo:
+@limiter.limit("60/minute")
+async def get_attach_info(request: Request, project_id: str) -> AttachInfo:
     """Return info needed to attach to container.
 
     Returns container ID and docker exec command for terminal attachment.

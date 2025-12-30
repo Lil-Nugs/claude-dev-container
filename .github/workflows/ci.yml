@@ -81,8 +81,8 @@ jobs:
       - name: Run smoke tests
         run: pytest -m smoke -v --tb=short
 
-      - name: Run integration tests
-        run: pytest tests/integration -v --tb=short
+      - name: Run integration tests (excluding Docker tests)
+        run: pytest tests/integration -v --tb=short -m "not docker"
 
   # Lint checks - run in parallel with tests
   lint:

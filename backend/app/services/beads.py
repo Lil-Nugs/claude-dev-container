@@ -1,11 +1,17 @@
 """Beads service for wrapping the bd CLI tool."""
 
+import logging
 import re
 import subprocess
 from pathlib import Path
 from typing import Any
 
 from app.models import Bead, BeadStatus, BeadType
+
+logger = logging.getLogger(__name__)
+
+# Default timeout for subprocess commands (in seconds)
+BD_COMMAND_TIMEOUT = 30
 
 
 class BeadsService:
@@ -19,28 +25,56 @@ class BeadsService:
         """
         self.project_path = str(project_path) if project_path else None
 
-    def _run_bd_command(self, args: list[str]) -> subprocess.CompletedProcess[str]:
+    def _run_bd_command(
+        self, args: list[str], timeout: int | None = None
+    ) -> subprocess.CompletedProcess[str]:
         """Run a bd CLI command.
 
         Args:
             args: Command arguments (excluding 'bd').
+            timeout: Command timeout in seconds. Defaults to BD_COMMAND_TIMEOUT.
 
         Returns:
             CompletedProcess with stdout/stderr.
 
         Raises:
-            RuntimeError: If project_path not set.
+            RuntimeError: If project_path not set or subprocess execution fails.
         """
         if not self.project_path:
             raise RuntimeError("project_path must be set to run bd commands")
 
         cmd = ["bd"] + args
-        return subprocess.run(
-            cmd,
-            cwd=self.project_path,
-            capture_output=True,
-            text=True,
-        )
+        effective_timeout = timeout if timeout is not None else BD_COMMAND_TIMEOUT
+
+        try:
+            result = subprocess.run(
+                cmd,
+                cwd=self.project_path,
+                capture_output=True,
+                text=True,
+                timeout=effective_timeout,
+            )
+            # Log stderr if command failed
+            if result.returncode != 0 and result.stderr:
+                logger.warning(
+                    "bd command failed: %s (exit code %d): %s",
+                    " ".join(cmd),
+                    result.returncode,
+                    result.stderr.strip(),
+                )
+            return result
+        except subprocess.TimeoutExpired as e:
+            logger.error(
+                "bd command timed out after %d seconds: %s",
+                effective_timeout,
+                " ".join(cmd),
+            )
+            raise RuntimeError(
+                f"bd command timed out after {effective_timeout} seconds: {' '.join(cmd)}"
+            ) from e
+        except OSError as e:
+            logger.error("Failed to execute bd command: %s - %s", " ".join(cmd), e)
+            raise RuntimeError(f"Failed to execute bd command: {e}") from e
 
     def _parse_bd_list_output(self, output: str) -> list[dict[str, Any]]:
         """Parse the output of bd list command.
@@ -194,13 +228,18 @@ class BeadsService:
             status: Optional status filter (open, in_progress, closed).
 
         Returns:
-            List of Bead objects.
+            List of Bead objects. Empty list if bd command fails.
         """
         args = ["list"]
         if status:
             args.extend(["--status", status])
 
-        result = self._run_bd_command(args)
+        try:
+            result = self._run_bd_command(args)
+        except RuntimeError as e:
+            logger.error("Failed to list beads: %s", e)
+            return []
+
         if result.returncode != 0:
             return []
 
@@ -214,9 +253,14 @@ class BeadsService:
             bead_id: The bead identifier.
 
         Returns:
-            Bead if found, None otherwise.
+            Bead if found, None if not found or bd command fails.
         """
-        result = self._run_bd_command(["show", bead_id])
+        try:
+            result = self._run_bd_command(["show", bead_id])
+        except RuntimeError as e:
+            logger.error("Failed to get bead %s: %s", bead_id, e)
+            return None
+
         if result.returncode != 0:
             return None
 
@@ -230,9 +274,14 @@ class BeadsService:
         """Get beads that are ready to work on (no blockers).
 
         Returns:
-            List of ready Bead objects.
+            List of ready Bead objects. Empty list if bd command fails.
         """
-        result = self._run_bd_command(["ready"])
+        try:
+            result = self._run_bd_command(["ready"])
+        except RuntimeError as e:
+            logger.error("Failed to get ready beads: %s", e)
+            return []
+
         if result.returncode != 0:
             return []
 
@@ -247,7 +296,12 @@ class BeadsService:
             status: New status value (open, in_progress).
 
         Returns:
-            True if update succeeded, False otherwise.
+            True if update succeeded, False if failed or bd command fails.
         """
-        result = self._run_bd_command(["update", bead_id, f"--status={status}"])
+        try:
+            result = self._run_bd_command(["update", bead_id, f"--status={status}"])
+        except RuntimeError as e:
+            logger.error("Failed to update bead %s status: %s", bead_id, e)
+            return False
+
         return result.returncode == 0

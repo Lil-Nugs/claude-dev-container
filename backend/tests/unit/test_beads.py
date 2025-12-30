@@ -45,7 +45,44 @@ class TestBeadsService:
             cwd="/test/project",
             capture_output=True,
             text=True,
+            timeout=30,
         )
+
+    def test_run_bd_command_with_custom_timeout(
+        self, service: BeadsService, mock_subprocess: Mock
+    ) -> None:
+        """Running bd command with custom timeout uses that timeout."""
+        mock_subprocess.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        service._run_bd_command(["list"], timeout=60)
+
+        mock_subprocess.assert_called_once_with(
+            ["bd", "list"],
+            cwd="/test/project",
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+    def test_run_bd_command_timeout_raises_runtime_error(
+        self, service: BeadsService, mock_subprocess: Mock
+    ) -> None:
+        """Running bd command that times out raises RuntimeError."""
+        import subprocess as sp
+
+        mock_subprocess.side_effect = sp.TimeoutExpired(cmd=["bd", "list"], timeout=30)
+
+        with pytest.raises(RuntimeError, match="timed out after 30 seconds"):
+            service._run_bd_command(["list"])
+
+    def test_run_bd_command_oserror_raises_runtime_error(
+        self, service: BeadsService, mock_subprocess: Mock
+    ) -> None:
+        """Running bd command when bd is not found raises RuntimeError."""
+        mock_subprocess.side_effect = OSError("No such file or directory: 'bd'")
+
+        with pytest.raises(RuntimeError, match="Failed to execute bd command"):
+            service._run_bd_command(["list"])
 
     # ==========================================================================
     # Test _parse_bd_list_output
