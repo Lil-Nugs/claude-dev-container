@@ -8,10 +8,10 @@ Skip with: pytest -m "not docker"
 """
 
 import os
+
 import pytest
 
 from app.services.containers import ContainerService
-
 
 # Skip all tests in this module if Docker is not available
 pytestmark = pytest.mark.docker
@@ -45,7 +45,9 @@ image_available = docker_available and is_image_available()
 
 
 @pytest.mark.skipif(not docker_available, reason="Docker daemon not available")
-@pytest.mark.skipif(not image_available, reason="claude-dev-base:latest image not built")
+@pytest.mark.skipif(
+    not image_available, reason="claude-dev-base:latest image not built"
+)
 class TestExecClaudeIntegration:
     """Integration tests for ContainerService.exec_claude with real containers.
 
@@ -70,12 +72,16 @@ class TestExecClaudeIntegration:
 
         # Create a test file
         test_file = project_dir / "README.md"
-        test_file.write_text("# Test Project\n\nThis is a test project for integration tests.")
+        test_file.write_text(
+            "# Test Project\n\nThis is a test project for integration tests."
+        )
 
         return str(project_dir)
 
     @pytest.fixture
-    def running_container(self, container_service: ContainerService, test_project_path: str):
+    def running_container(
+        self, container_service: ContainerService, test_project_path: str
+    ):
         """Create and manage a container for the test."""
         project_id = "integration-test"
         container_id = container_service.ensure_container(project_id, test_project_path)
@@ -96,7 +102,9 @@ class TestExecClaudeIntegration:
         project_id = "test-ensure-container"
 
         try:
-            container_id = container_service.ensure_container(project_id, test_project_path)
+            container_id = container_service.ensure_container(
+                project_id, test_project_path
+            )
 
             # Verify container exists and is running
             client = docker.from_env()
@@ -209,7 +217,9 @@ class TestExecClaudeIntegration:
         project_id = "test-stop"
 
         try:
-            container_id = container_service.ensure_container(project_id, test_project_path)
+            container_id = container_service.ensure_container(
+                project_id, test_project_path
+            )
 
             # Stop the container
             result = container_service.stop_container(project_id)
@@ -253,7 +263,9 @@ class TestExecClaudeIntegration:
         project_id = "test-naming"
 
         try:
-            container_id = container_service.ensure_container(project_id, test_project_path)
+            container_id = container_service.ensure_container(
+                project_id, test_project_path
+            )
 
             client = docker.from_env()
             container = client.containers.get(container_id)
@@ -283,7 +295,9 @@ class TestExecClaudeWithMockClaude:
         (project_dir / ".git").mkdir()
         return str(project_dir)
 
-    @pytest.mark.skipif(not image_available, reason="claude-dev-base:latest image not built")
+    @pytest.mark.skipif(
+        not image_available, reason="claude-dev-base:latest image not built"
+    )
     def test_exec_claude_uses_correct_command_structure(
         self,
         container_service: ContainerService,
@@ -309,7 +323,9 @@ echo "ARGS: $@"
             )
 
             # Test that the script works
-            output = container_service.exec_command(project_id, "/tmp/mock-claude -p 'test prompt'")
+            output = container_service.exec_command(
+                project_id, "/tmp/mock-claude -p 'test prompt'"
+            )
             assert "ARGS:" in output
             assert "test prompt" in output or "-p" in output
 
@@ -317,7 +333,9 @@ echo "ARGS: $@"
             container_service.remove_container(project_id)
 
 
-@pytest.mark.skipif(docker_available, reason="Test only runs when Docker is not available")
+@pytest.mark.skipif(
+    docker_available, reason="Test only runs when Docker is not available"
+)
 class TestDockerUnavailable:
     """Tests for behavior when Docker is not available."""
 

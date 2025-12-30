@@ -1,23 +1,23 @@
 """FastAPI application for Claude Dev Container."""
 
 import shlex
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Literal
 
 from app.models import (
-    Project,
+    AttachInfo,
     Bead,
     ExecutionResult,
     ProgressInfo,
-    AttachInfo,
-    WorkRequest,
+    Project,
     PushPRRequest,
+    WorkRequest,
 )
-from app.services.projects import ProjectService
 from app.services.beads import BeadsService
 from app.services.containers import ContainerService
+from app.services.projects import ProjectService
 
 app = FastAPI(
     title="Claude Dev Container",
@@ -74,9 +74,11 @@ async def get_project(project_id: str) -> Project:
 @app.get("/api/projects/{project_id}/beads")
 async def list_beads(
     project_id: str,
-    status: Literal["open", "in_progress", "blocked", "deferred", "closed"] | None = Query(
+    status: (
+        Literal["open", "in_progress", "blocked", "deferred", "closed"] | None
+    ) = Query(
         default=None,
-        description="Filter beads by status (open, in_progress, blocked, deferred, closed)",
+        description="Filter by status",
     ),
 ) -> list[Bead]:
     """List beads for a project (calls bd list)."""
@@ -84,7 +86,9 @@ async def list_beads(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     if not project.has_beads:
-        raise HTTPException(status_code=400, detail="Project does not have beads initialized")
+        raise HTTPException(
+            status_code=400, detail="Project does not have beads initialized"
+        )
 
     beads_service = BeadsService(project_path=project.path)
     return beads_service.list_beads(status=status)
@@ -113,7 +117,9 @@ async def work_on_bead(
 
     # Verify project has beads
     if not project.has_beads:
-        raise HTTPException(status_code=400, detail="Project does not have beads initialized")
+        raise HTTPException(
+            status_code=400, detail="Project does not have beads initialized"
+        )
 
     # Ensure container is running
     try:
@@ -198,7 +204,8 @@ async def push_and_create_pr(
 
         # Push to remote
         safe_branch = shlex.quote(branch)
-        push_result = container_service.exec_command(project_id, f"git push -u origin {safe_branch}")
+        push_cmd = f"git push -u origin {safe_branch}"
+        push_result = container_service.exec_command(project_id, push_cmd)
         if push_result.exit_code != 0:
             raise HTTPException(
                 status_code=500,

@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from app.services.containers import ContainerService
 from app.models import CommandResult, ExecutionState
+from app.services.containers import ContainerService
 
 
 class TestContainerService:
@@ -287,7 +287,9 @@ class TestContainerService:
 
         mock_container.client = Mock()
         mock_container.client.api.exec_create.return_value = {"Id": "exec123"}
-        mock_container.client.api.exec_start.return_value = iter([b"BLOCKED: waiting for input"])
+        mock_container.client.api.exec_start.return_value = iter(
+            [b"BLOCKED: waiting for input"]
+        )
         mock_container.client.api.exec_inspect.return_value = {"ExitCode": 1}
 
         result = service.exec_claude("test-project", "test prompt")

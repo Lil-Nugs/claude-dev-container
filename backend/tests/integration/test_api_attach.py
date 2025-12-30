@@ -1,6 +1,6 @@
 """Integration tests for attach endpoint."""
 
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -83,7 +83,7 @@ class TestAttachAPI:
         client: TestClient,
         mock_project: Mock,
     ) -> None:
-        """GET /api/projects/{id}/attach uses first 12 chars of container ID in command."""
+        """GET /api/projects/{id}/attach uses truncated container ID."""
         long_container_id = "a" * 64  # Full SHA256 container ID
 
         with patch("app.main.project_service.get_project", return_value=mock_project):
