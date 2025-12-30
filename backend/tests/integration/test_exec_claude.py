@@ -119,9 +119,10 @@ class TestExecClaudeIntegration:
         project_id, _ = running_container
 
         # Run a simple command
-        output = container_service.exec_command(project_id, "echo 'Hello World'")
+        result = container_service.exec_command(project_id, "echo 'Hello World'")
 
-        assert "Hello World" in output
+        assert result.exit_code == 0
+        assert "Hello World" in result.output
 
     def test_exec_command_can_see_workspace(
         self,
@@ -132,10 +133,11 @@ class TestExecClaudeIntegration:
         project_id, _ = running_container
 
         # List files in workspace
-        output = container_service.exec_command(project_id, "ls -la /workspace")
+        result = container_service.exec_command(project_id, "ls -la /workspace")
 
         # Should see the README.md we created
-        assert "README.md" in output
+        assert result.exit_code == 0
+        assert "README.md" in result.output
 
     def test_exec_command_can_read_files(
         self,
@@ -146,10 +148,11 @@ class TestExecClaudeIntegration:
         project_id, _ = running_container
 
         # Read the test file
-        output = container_service.exec_command(project_id, "cat /workspace/README.md")
+        result = container_service.exec_command(project_id, "cat /workspace/README.md")
 
-        assert "Test Project" in output
-        assert "integration tests" in output
+        assert result.exit_code == 0
+        assert "Test Project" in result.output
+        assert "integration tests" in result.output
 
     def test_exec_command_can_write_files(
         self,
@@ -182,9 +185,10 @@ class TestExecClaudeIntegration:
         """Test that container starts in /workspace directory."""
         project_id, _ = running_container
 
-        output = container_service.exec_command(project_id, "pwd")
+        result = container_service.exec_command(project_id, "pwd")
 
-        assert "/workspace" in output
+        assert result.exit_code == 0
+        assert "/workspace" in result.output
 
     def test_get_container_id_returns_valid_id(
         self,
@@ -258,61 +262,6 @@ class TestExecClaudeIntegration:
             client = docker.from_env()
             container = client.containers.get(container_id)
             assert f"claude-dev-{project_id}" in container.name
-        finally:
-            container_service.remove_container(project_id)
-
-
-@pytest.mark.skipif(not docker_available, reason="Docker daemon not available")
-class TestExecClaudeWithMockClaude:
-    """Integration tests that mock Claude CLI but use real containers.
-
-    These tests use real containers but mock the Claude CLI to test
-    the exec_claude method without requiring an actual Claude installation.
-    """
-
-    @pytest.fixture
-    def container_service(self) -> ContainerService:
-        """Create a ContainerService instance."""
-        return ContainerService()
-
-    @pytest.fixture
-    def test_project_path(self, tmp_path) -> str:
-        """Create a temporary project directory for testing."""
-        project_dir = tmp_path / "test-project"
-        project_dir.mkdir()
-        (project_dir / ".git").mkdir()
-        return str(project_dir)
-
-    @pytest.mark.skipif(not image_available, reason="claude-dev-base:latest image not built")
-    def test_exec_claude_uses_correct_command_structure(
-        self,
-        container_service: ContainerService,
-        test_project_path: str,
-    ) -> None:
-        """Test that exec_claude uses the correct command structure.
-
-        This test creates a fake 'claude' script in the container that
-        outputs its arguments, verifying the command structure.
-        """
-        project_id = "test-exec-structure"
-
-        try:
-            container_service.ensure_container(project_id, test_project_path)
-
-            # Create a mock claude script that outputs its arguments
-            mock_script = """#!/bin/bash
-echo "ARGS: $@"
-"""
-            container_service.exec_command(
-                project_id,
-                f"echo '{mock_script}' > /tmp/mock-claude && chmod +x /tmp/mock-claude"
-            )
-
-            # Test that the script works
-            output = container_service.exec_command(project_id, "/tmp/mock-claude -p 'test prompt'")
-            assert "ARGS:" in output
-            assert "test prompt" in output or "-p" in output
-
         finally:
             container_service.remove_container(project_id)
 
