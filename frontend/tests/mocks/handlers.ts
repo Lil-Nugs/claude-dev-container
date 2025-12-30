@@ -64,8 +64,10 @@ const mockAttachInfo: AttachInfo = {
 };
 
 const mockPushPRResponse: PushPRResponse = {
-  push: "Everything up-to-date",
-  pr: "https://github.com/user/repo/pull/42",
+  branch: "feature-branch",
+  push_output: "Everything up-to-date",
+  pr_output: "Creating pull request for feature-branch",
+  pr_url: "https://github.com/user/repo/pull/42",
 };
 
 // Request handlers matching SIMPLIFIED_PLAN.md API structure

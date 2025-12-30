@@ -186,9 +186,10 @@ describe("actionApi", () => {
     it("should push and create PR", async () => {
       const result = await actionApi.pushPR("proj-1");
 
-      expect(result.push).toBe("Everything up-to-date");
-      expect(result.pr).toContain("github.com");
-      expect(result.pr).toContain("/pull/42");
+      expect(result.branch).toBe("feature-branch");
+      expect(result.push_output).toBe("Everything up-to-date");
+      expect(result.pr_url).toContain("github.com");
+      expect(result.pr_url).toContain("/pull/42");
     });
 
     it("should pass title in request", async () => {
@@ -197,8 +198,10 @@ describe("actionApi", () => {
         http.post("/api/projects/:projectId/push-pr", async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({
-            push: "Everything up-to-date",
-            pr: "https://github.com/user/repo/pull/42",
+            branch: "feature-branch",
+            push_output: "Everything up-to-date",
+            pr_output: "Creating pull request",
+            pr_url: "https://github.com/user/repo/pull/42",
           });
         })
       );
