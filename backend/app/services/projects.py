@@ -1,9 +1,12 @@
 """Project service for scanning and managing workspace projects."""
 
+import logging
 from pathlib import Path
 
 from app.config import settings
 from app.models import Project
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectService:
@@ -66,6 +69,7 @@ class ProjectService:
 
         # Security: Validate path traversal - ensure resolved path is within workspace
         if not self._is_path_within_workspace(project_path, workspace):
+            logger.warning(f"Path traversal attempt detected: {project_id}")
             return None
 
         if not project_path.exists() or not project_path.is_dir():
