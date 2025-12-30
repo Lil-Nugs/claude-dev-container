@@ -18,6 +18,7 @@ from app.models import (
     AttachInfo,
     WorkRequest,
     PushPRRequest,
+    PushPRResponse,
 )
 from app.services.projects import ProjectService
 from app.services.beads import BeadsService
@@ -188,7 +189,7 @@ async def push_and_create_pr(
     request: Request,
     project_id: str,
     body: PushPRRequest | None = None,
-) -> dict[str, str]:
+) -> PushPRResponse:
     """Git push + gh pr create.
 
     Pushes the current branch to the remote and creates a pull request.
@@ -247,12 +248,12 @@ async def push_and_create_pr(
                 pr_url = line.strip()
                 break
 
-        return {
-            "branch": branch,
-            "push_output": push_result.output,
-            "pr_output": pr_result.output,
-            "pr_url": pr_url,
-        }
+        return PushPRResponse(
+            branch=branch,
+            push_output=push_result.output,
+            pr_output=pr_result.output,
+            pr_url=pr_url,
+        )
     except KeyError:
         raise HTTPException(status_code=500, detail="Container not available")
     except HTTPException:
