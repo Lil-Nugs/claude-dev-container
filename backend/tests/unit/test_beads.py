@@ -58,7 +58,7 @@ class TestBeadsService:
 
     def test_parse_bd_list_output_single_bead(self, service: BeadsService) -> None:
         """Parsing single bead output returns list with one item."""
-        output = "[P1] [open] [task] proj-abc: Implement feature X"
+        output = "proj-abc [P1] [task] open - Implement feature X"
 
         result = service._parse_bd_list_output(output)
 
@@ -71,9 +71,9 @@ class TestBeadsService:
 
     def test_parse_bd_list_output_multiple_beads(self, service: BeadsService) -> None:
         """Parsing multiple beads output returns all items."""
-        output = """[P1] [open] [task] proj-001: First task
-[P2] [in_progress] [bug] proj-002: Fix something
-[P0] [open] [feature] proj-003: New feature"""
+        output = """proj-001 [P1] [task] open - First task
+proj-002 [P2] [bug] in_progress - Fix something
+proj-003 [P0] [feature] open - New feature"""
 
         result = service._parse_bd_list_output(output)
 
@@ -89,7 +89,7 @@ class TestBeadsService:
     ) -> None:
         """Parsing ignores lines that don't match pattern."""
         output = """Some header text
-[P1] [open] [task] proj-abc: Valid bead
+proj-abc [P1] [task] open - Valid bead
 Invalid line here
 Another invalid line"""
 
@@ -103,7 +103,7 @@ Another invalid line"""
     ) -> None:
         """Parsing handles leading/trailing whitespace."""
         output = """
-  [P1] [open] [task] proj-abc: Bead with whitespace
+  proj-abc [P1] [task] open - Bead with whitespace
 
 """
 
@@ -262,7 +262,7 @@ Type: task"""
         """Listing beads returns parsed Bead objects."""
         mock_subprocess.return_value = Mock(
             returncode=0,
-            stdout="[P1] [open] [task] proj-001: Task one\n[P2] [in_progress] [bug] proj-002: Bug fix",
+            stdout="proj-001 [P1] [task] open - Task one\nproj-002 [P2] [bug] in_progress - Bug fix",
             stderr="",
         )
 
@@ -354,7 +354,7 @@ Type: task""",
         """Getting ready beads returns parsed Bead objects."""
         mock_subprocess.return_value = Mock(
             returncode=0,
-            stdout="[P1] [open] [task] proj-001: Ready task",
+            stdout="proj-001 [P1] [task] open - Ready task",
             stderr="",
         )
 

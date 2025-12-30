@@ -34,9 +34,9 @@ class TestBeadsAPI:
     @pytest.fixture
     def mock_bd_list_output(self) -> str:
         """Sample bd list output for mocking."""
-        return """[P1] [open] [task] proj-001: First task
-[P2] [in_progress] [bug] proj-002: Fix something
-[P0] [open] [feature] proj-003: New feature"""
+        return """proj-001 [P1] [task] open - First task
+proj-002 [P2] [bug] in_progress - Fix something
+proj-003 [P0] [feature] open - New feature"""
 
     # =========================================================================
     # GET /api/projects/{project_id}/beads
@@ -94,7 +94,7 @@ class TestBeadsAPI:
         # This will filter at the bd command level
         mock_result = Mock(
             returncode=0,
-            stdout="[P1] [open] [task] proj-001: Open task",
+            stdout="proj-001 [P1] [task] open - Open task",
             stderr="",
         )
 

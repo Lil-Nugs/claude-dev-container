@@ -87,6 +87,42 @@ docker logs -t <container_id>
 ### Frontend dev server logs
 Frontend logs appear in the terminal running `npm run dev`. Browser console (F12) shows client-side errors.
 
+## Testing (CRITICAL - Read Before Writing Code)
+
+**TDD Approach**: This project prioritizes test confidence. Write/update tests BEFORE or alongside implementation.
+
+### Quick Reference
+```bash
+# Backend tests
+cd backend && source .venv/bin/activate
+python3 -m pytest tests/unit -v          # Unit tests (fast, CI-safe)
+python3 -m pytest tests/integration -v   # Integration tests (CI-safe)
+python3 -m pytest -m docker -v           # Real Docker tests (LOCAL ONLY)
+
+# Frontend tests
+cd frontend
+npm run test:run                         # All tests (CI-safe)
+npx playwright test                      # E2E tests (CI-safe, mocked backend)
+```
+
+### CI vs Local - IMPORTANT
+- **CI tests use mocks** - Docker and Claude are mocked in GitHub Actions
+- **Local tests can use real Docker** - Mark with `@pytest.mark.docker`
+- **Green CI ≠ App Works** - Always run `pytest -m docker` locally before deploy
+
+### Test Writing Rules
+1. **New feature?** Write the test first (TDD)
+2. **Bug fix?** Write a failing test that reproduces it, then fix
+3. **Touching Docker/Container code?** Add both mocked test AND `@pytest.mark.docker` test
+4. **Touching API endpoints?** Update integration tests AND frontend mock handlers
+
+### Full Documentation
+See `docs/TESTING_STRATEGY.md` for:
+- What "app works" means and how we verify it
+- CI vs Local testing environments explained
+- Test tiers and when to run each
+- Examples of CI-safe vs Local-only tests
+
 ## Beads Workflow
 - Use `bd` commands for issue tracking
 - Priority scale: 0=critical, 1=high, 2=medium, 3=low, 4=backlog
