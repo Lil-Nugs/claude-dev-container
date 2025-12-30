@@ -37,3 +37,14 @@ ignore = []
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "smoke: Quick integration checks (run on pre-push)",
+    "integration: Full integration tests",
+    "docker: Tests requiring Docker daemon",
+    "slow: Tests too slow for watch mode",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+addopts = "-v --tb=short"
