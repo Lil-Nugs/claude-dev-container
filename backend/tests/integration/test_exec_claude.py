@@ -14,6 +14,8 @@ from app.services.containers import ContainerService
 
 
 # Skip all tests in this module if Docker is not available
+# NOTE: These tests are skipped in CI (via `-m "not docker"` in ci.yml).
+# Run locally before deploy with: pytest -m docker
 pytestmark = pytest.mark.docker
 
 
@@ -164,10 +166,11 @@ class TestExecClaudeIntegration:
         project_id, _ = running_container
 
         # Create a new file in the container
-        container_service.exec_command(
+        result = container_service.exec_command(
             project_id,
             "echo 'Created in container' > /workspace/container-created.txt"
         )
+        assert result.exit_code == 0
 
         # Verify file exists on host
         created_file = os.path.join(test_project_path, "container-created.txt")
