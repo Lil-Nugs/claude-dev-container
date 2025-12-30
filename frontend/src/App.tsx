@@ -157,8 +157,9 @@ function App(): JSX.Element {
 
     try {
       const result = await actionApi.pushPR(selectedProjectId);
-      // Combine push and PR output
-      const combinedOutput = `## Push Output\n${result.push}\n\n## PR Output\n${result.pr}`;
+      // Combine push and PR output with PR URL
+      const prUrlLine = result.pr_url ? `\n\n## PR URL\n${result.pr_url}` : "";
+      const combinedOutput = `## Push Output\n${result.push_output}\n\n## PR Output\n${result.pr_output}${prUrlLine}`;
       setOutput(combinedOutput);
       setOutputState("completed");
     } catch (err) {
