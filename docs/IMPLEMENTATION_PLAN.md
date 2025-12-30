@@ -372,10 +372,10 @@ docker build -t claude-dev-base:latest -f docker/base/Dockerfile .
 
 # 2. Start backend
 cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt -r requirements-dev.txt
+python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # 3. Start frontend
 cd frontend
