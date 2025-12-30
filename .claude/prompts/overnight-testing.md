@@ -1,6 +1,18 @@
 # Overnight Testing Session
 
-You are a TESTING SPECIALIST working overnight to get all test-related beads fixed and verified. Your goal is to make the test suite confident and green.
+You are a LIGHTWEIGHT ORCHESTRATOR working overnight to get all test-related beads fixed. Your job is to coordinate work, NOT do implementation yourself.
+
+## CRITICAL: Context Management
+
+**You must stay lightweight to run for 8 hours.** Follow these rules:
+
+1. **NEVER read code files directly** - delegate to sub-agents
+2. **NEVER implement fixes yourself** - spawn fresh sub-agents for ALL implementation
+3. **Each Task() spawns a FRESH agent** with no prior context - include ALL needed info in the prompt
+4. **Your job**: coordinate, track progress, commit, manage beads
+5. **Sub-agent job**: read code, implement fixes, run tests
+
+This keeps YOUR context small while sub-agents do the heavy lifting.
 
 ## Session Goals
 
@@ -8,11 +20,10 @@ You are a TESTING SPECIALIST working overnight to get all test-related beads fix
 2. Ensure all tests pass after each fix
 3. Run for up to 8 hours or until all testing beads are complete
 
-## Important Context
+## Test Commands (for sub-agent prompts)
 
-Read `docs/TESTING_STRATEGY.md` for understanding what tests verify. Key points:
-- Backend tests: `cd backend && source .venv/bin/activate && python3 -m pytest tests/ -v`
-- Frontend tests: `source ~/.nvm/nvm.sh && cd frontend && npm run test:run`
+- Backend: `cd backend && source .venv/bin/activate && python3 -m pytest tests/ -v`
+- Frontend: `source ~/.nvm/nvm.sh && cd frontend && npm run test:run`
 - E2E tests may fail due to missing Playwright deps (bead `0hi` addresses this)
 
 ## GUARDRAILS
@@ -65,24 +76,43 @@ Mark in progress:
 bd update <bead-id> --status=in_progress
 ```
 
-Spawn implementation sub-agent:
+Spawn a FRESH implementation sub-agent (include ALL context - agent has no prior knowledge):
 ```
-Task(subagent_type='general-purpose', prompt='Implement testing bead <bead-id>.
+Task(subagent_type='general-purpose', prompt='You are implementing a testing-related bead for claude-dev-container.
 
-Read the bead details with `bd show <bead-id>`.
-Read `docs/TESTING_STRATEGY.md` for context.
+## Your Task
+Implement bead: <bead-id>
 
-Follow these rules:
-1. Read existing test files before modifying
-2. Follow existing code patterns and test conventions
-3. Run tests BEFORE finishing to verify your changes work
-4. If tests fail, fix them before reporting success
+## Step 1: Understand the task
+Run: `bd show <bead-id>`
 
-Commands to run tests:
-- Backend: cd backend && source .venv/bin/activate && python3 -m pytest tests/ -v
-- Frontend: source ~/.nvm/nvm.sh && cd frontend && npm run test:run
+## Step 2: Read CLAUDE.md for project conventions
+Run: `cat CLAUDE.md`
 
-Do NOT commit - just implement and report success/failure with test output.')
+Key rules:
+- Use `python3` not `python`
+- Use `uv` for Python packages
+- Backend venv: `backend/.venv`
+
+## Step 3: Read relevant context
+Read `docs/TESTING_STRATEGY.md` for testing patterns.
+Read any files mentioned in the bead description.
+
+## Step 4: Implement the fix
+- Read existing code before modifying
+- Follow existing patterns
+- Make minimal changes
+
+## Step 5: Verify tests pass
+Backend: `cd backend && source .venv/bin/activate && python3 -m pytest tests/ -v`
+Frontend: `source ~/.nvm/nvm.sh && cd frontend && npm run test:run`
+
+## Step 6: Report results
+Do NOT commit. Report:
+- SUCCESS: what you changed, test output summary
+- FAILURE: what went wrong, error messages
+
+Be thorough but concise.')
 ```
 
 ### Step 3: Verify ALL Tests Pass
@@ -257,20 +287,39 @@ Mark in progress:
 bd update <bead-id> --status=in_progress
 ```
 
-Spawn implementation sub-agent:
+Spawn a FRESH implementation sub-agent:
 ```
-Task(subagent_type='general-purpose', prompt='Implement bead <bead-id>.
+Task(subagent_type='general-purpose', prompt='You are implementing a bead for claude-dev-container.
 
-Read the bead details with `bd show <bead-id>`.
-Follow existing code patterns.
-Write tests for new functionality.
-Run tests before finishing.
+## Your Task
+Implement bead: <bead-id>
 
-Commands to run tests:
-- Backend: cd backend && source .venv/bin/activate && python3 -m pytest tests/ -v
-- Frontend: source ~/.nvm/nvm.sh && cd frontend && npm run test:run
+## Step 1: Understand the task
+Run: `bd show <bead-id>`
 
-Do NOT commit - just implement and report success/failure.')
+## Step 2: Read CLAUDE.md for project conventions
+Run: `cat CLAUDE.md`
+
+Key rules:
+- Use `python3` not `python`
+- Use `uv` for Python packages
+- Backend venv: `backend/.venv`
+
+## Step 3: Read relevant files
+Read any files mentioned in the bead description.
+Read existing code before modifying.
+
+## Step 4: Implement
+- Follow existing patterns
+- Write tests for new functionality
+- Make minimal changes
+
+## Step 5: Verify tests pass
+Backend: `cd backend && source .venv/bin/activate && python3 -m pytest tests/ -v`
+Frontend: `source ~/.nvm/nvm.sh && cd frontend && npm run test:run`
+
+## Step 6: Report results
+Do NOT commit. Report SUCCESS or FAILURE with details.')
 ```
 
 #### 2.3 Verify and Commit
@@ -295,11 +344,30 @@ If fail after 2 attempts, skip and continue.
 
 #### 2.4 Quick Review
 
-Spawn review sub-agent:
+Spawn a FRESH review sub-agent:
 ```
-Task(subagent_type='general-purpose', prompt='/review-implementation --no-pr
+Task(subagent_type='general-purpose', prompt='You are reviewing recent code changes in claude-dev-container.
 
-Focus on the most recent commit only. Create fix beads for any issues found.
+## Your Task
+Review the most recent commit for issues.
+
+## Step 1: See what changed
+Run: `git log -1 --stat`
+Run: `git diff HEAD~1`
+
+## Step 2: Check for issues
+Look for:
+- Bugs or logic errors
+- Missing error handling
+- Security issues
+- Test gaps
+
+## Step 3: Create fix beads if needed
+For any issues found, run:
+`bd create --title="Fix: <issue>" --type=bug --priority=1`
+
+## Step 4: Report
+List any issues found and beads created.
 Do NOT create a PR.')
 ```
 
