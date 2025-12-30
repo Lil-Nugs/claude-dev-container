@@ -148,7 +148,7 @@ test.describe("Bead Listing", () => {
     await page.click('[data-testid="project-card"]:first-child');
 
     // Should show loading spinner
-    await expect(page.locator('[role="progressbar"]')).toBeVisible();
+    await expect(page.locator('[data-testid="loading-beads"]')).toBeVisible();
 
     // Then show beads
     await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
