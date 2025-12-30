@@ -75,6 +75,9 @@ jobs:
         run: |
           pip install -r requirements.txt -r requirements-dev.txt
 
+      - name: Build Docker image for integration tests
+        run: docker build -t claude-dev-base:latest -f ../docker/Dockerfile ../docker
+
       - name: Run smoke tests
         run: pytest -m smoke -v --tb=short
 
