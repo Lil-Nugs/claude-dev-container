@@ -18,5 +18,11 @@ git --version > /dev/null 2>&1 || exit 1
 # Check GitHub CLI is available
 gh --version > /dev/null 2>&1 || exit 1
 
+# Check Claude CLI is available (optional - may not be mounted)
+# This is a warning, not a failure, since Claude is mounted at runtime
+if command -v claude > /dev/null 2>&1; then
+    claude --version > /dev/null 2>&1 || echo "Warning: Claude CLI found but version check failed"
+fi
+
 # All checks passed
 exit 0
