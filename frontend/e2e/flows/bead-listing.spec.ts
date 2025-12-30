@@ -59,6 +59,11 @@ test.describe("Bead Listing", () => {
         await route.fulfill({ json: mockBeads });
       }
     });
+
+    // Catch-all for any unmocked API requests
+    await page.route("/api/**", async (route) => {
+      await route.fulfill({ json: [] });
+    });
   });
 
   test("should display all beads for selected project", async ({ page }) => {

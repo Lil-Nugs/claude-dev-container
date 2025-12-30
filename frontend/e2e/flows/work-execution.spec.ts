@@ -57,12 +57,17 @@ test.describe("Work Execution Flow", () => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads", async (route) => {
+    await page.route("/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
-    await page.route("/api/projects/proj-1/progress", async (route) => {
+    await page.route("/api/projects/proj-1/progress*", async (route) => {
       await route.fulfill({ json: mockProgressInfo });
+    });
+
+    // Catch-all for any unmocked API requests
+    await page.route("/api/**", async (route) => {
+      await route.fulfill({ json: [] });
     });
   });
 

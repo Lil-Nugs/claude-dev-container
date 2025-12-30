@@ -36,12 +36,17 @@ test.describe("Terminal Access", () => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads", async (route) => {
+    await page.route("/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
     await page.route("/api/projects/proj-1/attach", async (route) => {
       await route.fulfill({ json: mockAttachInfo });
+    });
+
+    // Catch-all for any unmocked API requests (must be last)
+    await page.route("/api/**", async (route) => {
+      await route.fulfill({ json: [] });
     });
   });
 
