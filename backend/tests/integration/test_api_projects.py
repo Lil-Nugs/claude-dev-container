@@ -139,3 +139,41 @@ class TestProjectsAPI:
 
         data = response.json()
         assert data["has_beads"] is False
+
+    # =========================================================================
+    # Path Traversal Security Tests
+    # =========================================================================
+
+    def test_get_project_blocks_path_traversal(
+        self, client: TestClient, mock_workspace: Path
+    ) -> None:
+        """GET /api/projects/{id} blocks path traversal attempts."""
+        with patch("app.main.project_service.workspace_path", mock_workspace):
+            # Simple traversal
+            response = client.get("/api/projects/../")
+            assert response.status_code == 404
+
+    def test_get_project_blocks_deep_path_traversal(
+        self, client: TestClient, mock_workspace: Path
+    ) -> None:
+        """GET /api/projects/{id} blocks deep path traversal attempts."""
+        with patch("app.main.project_service.workspace_path", mock_workspace):
+            response = client.get("/api/projects/../../..")
+            assert response.status_code == 404
+
+    def test_get_project_blocks_encoded_traversal(
+        self, client: TestClient, mock_workspace: Path
+    ) -> None:
+        """GET /api/projects/{id} blocks URL-encoded path traversal."""
+        with patch("app.main.project_service.workspace_path", mock_workspace):
+            # URL-encoded ../
+            response = client.get("/api/projects/..%2F..%2F")
+            assert response.status_code == 404
+
+    def test_get_project_blocks_mixed_traversal(
+        self, client: TestClient, mock_workspace: Path
+    ) -> None:
+        """GET /api/projects/{id} blocks mixed path traversal attempts."""
+        with patch("app.main.project_service.workspace_path", mock_workspace):
+            response = client.get("/api/projects/project-with-beads/../../../etc")
+            assert response.status_code == 404

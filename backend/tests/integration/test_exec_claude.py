@@ -9,10 +9,8 @@ Skip with: pytest -m "not docker"
 
 import os
 import pytest
-from unittest.mock import patch
 
 from app.services.containers import ContainerService
-from app.models import ExecutionState
 
 
 # Skip all tests in this module if Docker is not available
