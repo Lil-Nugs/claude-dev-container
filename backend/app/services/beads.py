@@ -46,7 +46,7 @@ class BeadsService:
         """Parse the output of bd list command.
 
         bd list outputs lines like:
-        [P1] [open] [task] proj-abc: Title here
+        proj-abc [P1] [task] open - Title here
 
         Args:
             output: Raw stdout from bd list.
@@ -55,8 +55,8 @@ class BeadsService:
             List of parsed bead dictionaries.
         """
         beads = []
-        # Pattern: [P0-4] [status] [type] id: title
-        pattern = r"\[P(\d)\]\s+\[(\w+)\]\s+\[(\w+)\]\s+([^:]+):\s*(.+)"
+        # Pattern: id [P0-4] [type] status - title
+        pattern = r"^(\S+)\s+\[P(\d)\]\s+\[(\w+)\]\s+(\w+)\s+-\s+(.+)$"
 
         for line in output.strip().split("\n"):
             line = line.strip()
@@ -65,7 +65,7 @@ class BeadsService:
 
             match = re.match(pattern, line)
             if match:
-                priority, status, bead_type, bead_id, title = match.groups()
+                bead_id, priority, bead_type, status, title = match.groups()
                 beads.append(
                     {
                         "id": bead_id.strip(),
