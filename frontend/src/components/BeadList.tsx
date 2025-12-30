@@ -70,6 +70,7 @@ export function BeadList({
         className="flex items-center justify-center py-8 sm:py-12"
         role="progressbar"
         aria-label="Loading beads"
+        data-testid="loading-beads"
       >
         <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-b-2 border-blue-600"></div>
       </div>
