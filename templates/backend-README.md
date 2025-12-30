@@ -59,12 +59,12 @@ pytest tests/unit/test_project.py -v
 
 ```bash
 # Setup
-python -m venv venv
-source venv/bin/activate
-pip install -e ".[dev]"
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt -r requirements-dev.txt
 
 # Run dev server
-uvicorn app.main:app --reload
+python3 -m uvicorn app.main:app --reload
 
 # Lint
 ruff check .

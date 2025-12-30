@@ -307,15 +307,15 @@ git status                   # Verify clean state
 ```bash
 # Backend setup
 cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -e ".[dev]"
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt -r requirements-dev.txt
 
 # Backend run
-uvicorn app.main:app --reload
+python3 -m uvicorn app.main:app --reload
 
 # Backend test
-pytest
+python3 -m pytest
 
 # Frontend setup
 cd frontend
@@ -325,7 +325,7 @@ npm install
 npm run dev
 
 # Frontend test
-npm test
+npm run test:run
 ```
 
 ## Checking GitHub Issues and PRs

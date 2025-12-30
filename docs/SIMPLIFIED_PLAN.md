@@ -893,8 +893,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install -r backend/requirements-dev.txt
-      - run: cd backend && pytest --cov=app --cov-report=term-missing
+      - run: pip install uv && uv pip install --system -r backend/requirements.txt -r backend/requirements-dev.txt
+      - run: cd backend && python3 -m pytest --cov=app --cov-report=term-missing
 
   frontend:
     runs-on: ubuntu-latest

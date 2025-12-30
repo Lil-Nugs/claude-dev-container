@@ -109,10 +109,10 @@ docker stats <container-id>
 **Checks:**
 ```bash
 # Ensure virtual environment is active
-source venv/bin/activate
+source .venv/bin/activate
 
 # Check dependencies installed
-pip install -e ".[dev]"
+uv pip install -r requirements.txt -r requirements-dev.txt
 
 # Check for port conflicts
 lsof -i :8000
@@ -124,12 +124,12 @@ lsof -i :8000
 
 **Solution:**
 ```bash
-# Install in editable mode
+# Install dependencies
 cd backend
-pip install -e ".[dev]"
+uv pip install -r requirements.txt -r requirements-dev.txt
 
 # Verify installation
-pip list | grep claude-dev
+uv pip list | grep -i fastapi
 ```
 
 ### Tests Failing

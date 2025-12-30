@@ -54,12 +54,12 @@ pytest tests/integration/test_api_health.py -v
 ```bash
 # Setup
 cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt -r requirements-dev.txt
 
 # Run dev server
-uvicorn app.main:app --reload
+python3 -m uvicorn app.main:app --reload
 
 # Lint
 ruff check .

@@ -26,7 +26,7 @@ Phone (PWA) → FastAPI Backend → Docker Container (Claude CLI + project)
 
 ```bash
 # Backend
-cd backend && pip install -e ".[dev]" && uvicorn app.main:app --reload
+cd backend && uv venv && source .venv/bin/activate && uv pip install -r requirements.txt -r requirements-dev.txt && python3 -m uvicorn app.main:app --reload
 
 # Frontend
 cd frontend && npm install && npm run dev
