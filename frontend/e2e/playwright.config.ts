@@ -14,7 +14,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? "html" : "list",
+  reporter: process.env.CI ? [["html"], ["github"], ["line"]] : "list",
   timeout: 60000,
 
   use: {
@@ -23,16 +23,23 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
 
-  projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "mobile-chrome",
-      use: { ...devices["Pixel 5"] },
-    },
-  ],
+  projects: process.env.CI
+    ? [
+        {
+          name: "chromium",
+          use: { ...devices["Desktop Chrome"] },
+        },
+      ]
+    : [
+        {
+          name: "chromium",
+          use: { ...devices["Desktop Chrome"] },
+        },
+        {
+          name: "mobile-chrome",
+          use: { ...devices["Pixel 5"] },
+        },
+      ],
 
   // WebServer configuration - only enabled in CI or when explicitly requested
   ...(process.env.CI || process.env.PLAYWRIGHT_WEBSERVER
