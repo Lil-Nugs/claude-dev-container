@@ -53,6 +53,8 @@ export interface PushPRRequest {
 
 // Response types for actions
 export interface PushPRResponse {
-  push: string;
-  pr: string;
+  branch: string;
+  push_output: string;
+  pr_output: string;
+  pr_url: string;
 }

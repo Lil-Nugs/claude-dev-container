@@ -4,7 +4,11 @@ interface BeadListProps {
   beads: Bead[];
   loading: boolean;
   onSelect: (beadId: string) => void;
-  selectedBeadId?: string;
+  selectedBeadId?: string | undefined;
+  /** Current status filter */
+  statusFilter?: BeadStatus | null | undefined;
+  /** Callback when status filter changes */
+  onStatusFilterChange?: ((status: BeadStatus | null) => void) | undefined;
 }
 
 /**
@@ -57,6 +61,8 @@ export function BeadList({
   loading,
   onSelect,
   selectedBeadId,
+  statusFilter,
+  onStatusFilterChange,
 }: BeadListProps): JSX.Element {
   if (loading) {
     return (
@@ -70,16 +76,50 @@ export function BeadList({
     );
   }
 
+  // Filter dropdown component
+  const FilterDropdown = onStatusFilterChange ? (
+    <div className="mb-3 flex items-center gap-2">
+      <label htmlFor="status-filter" className="text-sm text-gray-600">
+        Filter by status:
+      </label>
+      <select
+        id="status-filter"
+        value={statusFilter || ""}
+        onChange={(e) =>
+          onStatusFilterChange(
+            e.target.value ? (e.target.value as BeadStatus) : null
+          )
+        }
+        className="
+          px-3 py-1.5 rounded border border-gray-300 bg-white
+          text-sm focus:outline-none focus:ring-2 focus:ring-blue-500
+          min-h-[36px]
+        "
+        data-testid="filter-status"
+      >
+        <option value="">All</option>
+        <option value="open">Open</option>
+        <option value="in_progress">In Progress</option>
+        <option value="closed">Closed</option>
+      </select>
+    </div>
+  ) : null;
+
   if (beads.length === 0) {
     return (
-      <div className="text-center py-8 sm:py-12 text-gray-500 text-sm sm:text-base" data-testid="empty-beads">
-        No beads found
+      <div>
+        {FilterDropdown}
+        <div className="text-center py-8 sm:py-12 text-gray-500 text-sm sm:text-base" data-testid="empty-beads">
+          No beads found
+        </div>
       </div>
     );
   }
 
   return (
-    <ul className="divide-y divide-gray-200" data-testid="bead-list">
+    <div>
+      {FilterDropdown}
+      <ul className="divide-y divide-gray-200" data-testid="bead-list">
       {beads.map((bead) => (
         <li
           key={bead.id}
@@ -158,7 +198,8 @@ export function BeadList({
           </div>
         </li>
       ))}
-    </ul>
+      </ul>
+    </div>
   );
 }
 

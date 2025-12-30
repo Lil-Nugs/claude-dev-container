@@ -61,16 +61,19 @@ Overall: **Changes Requested**`,
   exit_code: 0,
 };
 
-// SKIPPED: Tests depend on project-card selector that doesn't exist yet
-// See bead: claude-dev-container-8ex (Fix E2E tests: Add missing data-testid attributes)
-test.describe.skip("Review Flow", () => {
+test.describe("Review Flow", () => {
   test.beforeEach(async ({ page }) => {
     await page.route("/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads", async (route) => {
+    await page.route("/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
+    });
+
+    // Catch-all for any unmocked API requests
+    await page.route("/api/**", async (route) => {
+      await route.fulfill({ json: [] });
     });
   });
 

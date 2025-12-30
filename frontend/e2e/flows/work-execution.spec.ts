@@ -50,21 +50,24 @@ const mockProgressInfo = {
   bytes: 1024,
 };
 
-// SKIPPED: Tests depend on project-card selector that doesn't exist yet
-// See bead: claude-dev-container-8ex (Fix E2E tests: Add missing data-testid attributes)
-test.describe.skip("Work Execution Flow", () => {
+test.describe("Work Execution Flow", () => {
   test.beforeEach(async ({ page }) => {
     // Mock basic API endpoints
     await page.route("/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads", async (route) => {
+    await page.route("/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
-    await page.route("/api/projects/proj-1/progress", async (route) => {
+    await page.route("/api/projects/proj-1/progress*", async (route) => {
       await route.fulfill({ json: mockProgressInfo });
+    });
+
+    // Catch-all for any unmocked API requests
+    await page.route("/api/**", async (route) => {
+      await route.fulfill({ json: [] });
     });
   });
 

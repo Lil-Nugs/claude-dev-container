@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from app.services.containers import ContainerService
-from app.models import ExecutionState
+from app.models import CommandResult, ExecutionState
 
 
 class TestContainerService:
@@ -422,22 +422,42 @@ class TestContainerService:
         with pytest.raises(KeyError, match="No container"):
             service.exec_command("nonexistent", "ls -la")
 
-    def test_exec_command_returns_output(
+    def test_exec_command_returns_command_result(
         self,
         service: ContainerService,
         mock_docker_client: Mock,
         mock_container: Mock,
     ) -> None:
-        """Executing command returns output string."""
+        """Executing command returns CommandResult with exit_code and output."""
         mock_docker_client.containers.run.return_value = mock_container
         service.ensure_container("test-project", "/path/to/project")
 
         mock_container.exec_run.return_value = (0, b"command output")
 
-        output = service.exec_command("test-project", "echo hello")
+        result = service.exec_command("test-project", "echo hello")
 
-        assert output == "command output"
+        assert isinstance(result, CommandResult)
+        assert result.exit_code == 0
+        assert result.output == "command output"
         mock_container.exec_run.assert_called_once()
+
+    def test_exec_command_returns_non_zero_exit_code(
+        self,
+        service: ContainerService,
+        mock_docker_client: Mock,
+        mock_container: Mock,
+    ) -> None:
+        """Executing command returns non-zero exit code on failure."""
+        mock_docker_client.containers.run.return_value = mock_container
+        service.ensure_container("test-project", "/path/to/project")
+
+        mock_container.exec_run.return_value = (1, b"error: command failed")
+
+        result = service.exec_command("test-project", "exit 1")
+
+        assert isinstance(result, CommandResult)
+        assert result.exit_code == 1
+        assert result.output == "error: command failed"
 
     # =========================================================================
     # Test get_container_id

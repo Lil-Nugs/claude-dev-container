@@ -92,3 +92,10 @@ class PushPRRequest(BaseModel):
     """Request body for push-pr endpoint."""
 
     title: Optional[str] = Field(default=None, description="Optional PR title")
+
+
+class CommandResult(BaseModel):
+    """Result of executing a shell command in a container."""
+
+    exit_code: int = Field(..., description="Command exit code")
+    output: str = Field(..., description="Command output")

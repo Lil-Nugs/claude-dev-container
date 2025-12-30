@@ -40,20 +40,23 @@ const mockBeads = [
   },
 ];
 
-// SKIPPED: Tests depend on project-card/project-list selectors that don't exist yet
-// See bead: claude-dev-container-8ex (Fix E2E tests: Add missing data-testid attributes)
-test.describe.skip("Project Selection", () => {
+test.describe("Project Selection", () => {
   test.beforeEach(async ({ page }) => {
     // Mock API endpoints
     await page.route("/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads", async (route) => {
+    await page.route("/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
-    await page.route("/api/projects/proj-2/beads", async (route) => {
+    await page.route("/api/projects/proj-2/beads*", async (route) => {
+      await route.fulfill({ json: [] });
+    });
+
+    // Catch-all for any unmocked API requests
+    await page.route("/api/**", async (route) => {
       await route.fulfill({ json: [] });
     });
   });

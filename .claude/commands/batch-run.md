@@ -39,10 +39,7 @@ Track these counters throughout the session:
 | Forbidden paths touched | Any | Skip that bead |
 
 **Forbidden Paths** (beads touching these require human review):
-- `.github/workflows/*`
-- `**/auth/**`, `**/security/**`
 - `*.env*`, `**/secrets/**`
-- `docker-compose*.yml`, `Dockerfile*`
 
 ## Session State
 

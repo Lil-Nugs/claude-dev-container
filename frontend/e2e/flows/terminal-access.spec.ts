@@ -30,20 +30,23 @@ const mockAttachInfo = {
   command: "docker exec -it abc123def456 /bin/bash",
 };
 
-// SKIPPED: Tests depend on project-card selector that doesn't exist yet
-// See bead: claude-dev-container-8ex (Fix E2E tests: Add missing data-testid attributes)
-test.describe.skip("Terminal Access", () => {
+test.describe("Terminal Access", () => {
   test.beforeEach(async ({ page }) => {
     await page.route("/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads", async (route) => {
+    await page.route("/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
     await page.route("/api/projects/proj-1/attach", async (route) => {
       await route.fulfill({ json: mockAttachInfo });
+    });
+
+    // Catch-all for any unmocked API requests (must be last)
+    await page.route("/api/**", async (route) => {
+      await route.fulfill({ json: [] });
     });
   });
 
