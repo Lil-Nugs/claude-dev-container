@@ -320,7 +320,7 @@ class TestPushPRAPI:
         assert response.status_code == 500
         assert "Container not available" in response.json()["detail"]
 
-    def test_push_pr_escapes_shell_metacharacters(
+    def test_push_pr_escapes_shell_metacharacters_in_title(
         self,
         client: TestClient,
         mock_project: Mock,
@@ -351,6 +351,38 @@ class TestPushPRAPI:
         # shlex.quote wraps strings with shell metacharacters in single quotes
         # Expected: gh pr create --title 'Fix bug"; rm -rf / #' --fill
         assert pr_cmd == "gh pr create --title 'Fix bug\"; rm -rf / #' --fill"
+
+    def test_push_pr_escapes_shell_metacharacters_in_branch_name(
+        self,
+        client: TestClient,
+        mock_project: Mock,
+    ) -> None:
+        """POST /api/projects/{id}/push-pr properly escapes shell metacharacters in branch name."""
+        # Branch name with shell metacharacters that could be exploited for injection
+        malicious_branch = 'feature/test; rm -rf / #'
+
+        with patch("app.main.project_service.get_project", return_value=mock_project):
+            with patch("app.main.container_service.ensure_container", return_value="container-123"):
+                with patch(
+                    "app.main.container_service.exec_command",
+                    side_effect=[
+                        f"{malicious_branch}\n",  # git rev-parse returns malicious branch
+                        "Branch pushed successfully\n",  # git push
+                        "https://github.com/org/repo/pull/126\n",  # gh pr create
+                    ],
+                ) as mock_exec:
+                    response = client.post("/api/projects/test-project/push-pr")
+
+        assert response.status_code == 200
+        # Verify the git push command was properly escaped
+        calls = mock_exec.call_args_list
+        push_cmd = calls[1][0][1]
+        # shlex.quote wraps strings with shell metacharacters in single quotes
+        # Expected: git push -u origin 'feature/test; rm -rf / #'
+        assert push_cmd == "git push -u origin 'feature/test; rm -rf / #'"
+        # Verify the branch name is still returned correctly
+        data = response.json()
+        assert data["branch"] == malicious_branch
 
 
 class TestProgressAPI:

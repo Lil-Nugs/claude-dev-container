@@ -192,7 +192,8 @@ async def push_and_create_pr(
         branch = branch_output.strip()
 
         # Push to remote
-        push_output = container_service.exec_command(project_id, f"git push -u origin {branch}")
+        safe_branch = shlex.quote(branch)
+        push_output = container_service.exec_command(project_id, f"git push -u origin {safe_branch}")
 
         # Create PR with gh CLI
         pr_title = request.title if request and request.title else ""
