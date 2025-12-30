@@ -189,3 +189,95 @@ class TestProjectService:
         assert isinstance(result.name, str)
         assert isinstance(result.path, str)
         assert isinstance(result.has_beads, bool)
+
+    # =========================================================================
+    # Path Traversal Security Tests
+    # =========================================================================
+
+    def test_get_project_blocks_path_traversal_simple(
+        self, workspace: Path, service: ProjectService
+    ) -> None:
+        """get_project blocks simple path traversal attempts."""
+        # Create a project outside workspace that we should NOT be able to access
+        (workspace / "legit-project" / ".git").mkdir(parents=True)
+
+        # Attempt path traversal
+        result = service.get_project("../")
+        assert result is None
+
+    def test_get_project_blocks_path_traversal_deep(
+        self, workspace: Path, service: ProjectService
+    ) -> None:
+        """get_project blocks deep path traversal attempts."""
+        (workspace / "legit-project" / ".git").mkdir(parents=True)
+
+        # Attempt to escape multiple directories
+        result = service.get_project("../../..")
+        assert result is None
+
+    def test_get_project_blocks_path_traversal_with_subdir(
+        self, workspace: Path, service: ProjectService
+    ) -> None:
+        """get_project blocks path traversal with subdirectory."""
+        (workspace / "legit-project" / ".git").mkdir(parents=True)
+
+        # Attempt traversal that looks like it ends in a valid path
+        result = service.get_project("../workspace/legit-project")
+        assert result is None
+
+    def test_get_project_blocks_encoded_path_traversal(
+        self, workspace: Path, service: ProjectService
+    ) -> None:
+        """get_project blocks path traversal with mixed patterns."""
+        (workspace / "legit-project" / ".git").mkdir(parents=True)
+
+        # Attempt traversal with nested ..
+        result = service.get_project("legit-project/../../../etc")
+        assert result is None
+
+    def test_get_project_blocks_absolute_path_attempt(
+        self, workspace: Path, service: ProjectService
+    ) -> None:
+        """get_project blocks attempts to use absolute paths."""
+        (workspace / "legit-project" / ".git").mkdir(parents=True)
+
+        # Attempt to access root (would fail anyway but should be caught)
+        result = service.get_project("/etc/passwd")
+        assert result is None
+
+    def test_get_project_allows_valid_project_names(
+        self, workspace: Path, service: ProjectService
+    ) -> None:
+        """get_project still allows valid project names with special chars."""
+        # Valid project names that might look suspicious but are legitimate
+        (workspace / "my-project" / ".git").mkdir(parents=True)
+        (workspace / "project_v2" / ".git").mkdir(parents=True)
+        (workspace / "project.name" / ".git").mkdir(parents=True)
+
+        assert service.get_project("my-project") is not None
+        assert service.get_project("project_v2") is not None
+        assert service.get_project("project.name") is not None
+
+    def test_is_path_within_workspace_returns_true_for_valid(
+        self, workspace: Path, service: ProjectService
+    ) -> None:
+        """_is_path_within_workspace returns True for paths inside workspace."""
+        valid_path = workspace / "some-project"
+        result = service._is_path_within_workspace(valid_path.resolve(), workspace.resolve())
+        assert result is True
+
+    def test_is_path_within_workspace_returns_false_for_outside(
+        self, workspace: Path, service: ProjectService
+    ) -> None:
+        """_is_path_within_workspace returns False for paths outside workspace."""
+        outside_path = workspace.parent / "other-dir"
+        result = service._is_path_within_workspace(outside_path.resolve(), workspace.resolve())
+        assert result is False
+
+    def test_is_path_within_workspace_returns_false_for_traversal(
+        self, workspace: Path, service: ProjectService
+    ) -> None:
+        """_is_path_within_workspace returns False for path traversal attempts."""
+        traversal_path = (workspace / ".." / "other").resolve()
+        result = service._is_path_within_workspace(traversal_path, workspace.resolve())
+        assert result is False

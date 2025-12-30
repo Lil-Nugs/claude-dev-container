@@ -56,9 +56,17 @@ class ProjectService:
 
         Returns:
             Project if found, None otherwise.
+
+        Security:
+            Validates that the resolved path stays within workspace_path
+            to prevent path traversal attacks.
         """
-        workspace = Path(self.workspace_path).expanduser()
-        project_path = workspace / project_id
+        workspace = Path(self.workspace_path).expanduser().resolve()
+        project_path = (workspace / project_id).resolve()
+
+        # Security: Validate path traversal - ensure resolved path is within workspace
+        if not self._is_path_within_workspace(project_path, workspace):
+            return None
 
         if not project_path.exists() or not project_path.is_dir():
             return None
@@ -71,6 +79,22 @@ class ProjectService:
             path=str(project_path),
             has_beads=(project_path / ".beads").exists(),
         )
+
+    def _is_path_within_workspace(self, path: Path, workspace: Path) -> bool:
+        """Check if a path is within the workspace directory.
+
+        Args:
+            path: The path to check (should be resolved/absolute).
+            workspace: The workspace directory (should be resolved/absolute).
+
+        Returns:
+            True if path is within workspace, False otherwise.
+        """
+        try:
+            path.relative_to(workspace)
+            return True
+        except ValueError:
+            return False
 
     def check_beads_initialized(self, project_path: Path) -> bool:
         """Check if a project has beads initialized.
