@@ -36,10 +36,6 @@ Track these counters throughout the session:
 | Total failures | 5 | Stop session |
 | Same test issue fails | 3x | Stop session |
 | Files changed | 50 | Stop session |
-| Forbidden paths touched | Any | Skip that bead |
-
-**Forbidden Paths** (beads touching these require human review):
-- `*.env*`, `**/secrets/**`
 
 ## Session State
 
@@ -99,13 +95,6 @@ Select ONE bead to implement. Prefer:
 1. P0/P1 fix beads (from previous review)
 2. Tasks that unblock other work
 3. Highest priority ready bead
-
-Check if the bead touches forbidden paths:
-```bash
-bd show <bead-id>
-```
-
-If it likely touches forbidden paths, add to `skipped_beads` and select another.
 
 ### Step 2.3: Implement
 
