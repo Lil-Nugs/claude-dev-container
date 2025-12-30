@@ -10,7 +10,7 @@ import docker
 from docker.errors import DockerException, NotFound
 
 from app.config import settings
-from app.models import ExecutionResult, ExecutionState, ProgressInfo
+from app.models import CommandResult, ExecutionResult, ExecutionState, ProgressInfo
 
 
 class ContainerService:
@@ -297,7 +297,7 @@ class ContainerService:
             bytes=len(output),
         )
 
-    def exec_command(self, project_id: str, command: str) -> str:
+    def exec_command(self, project_id: str, command: str) -> CommandResult:
         """Execute a simple command in the container.
 
         Args:
@@ -305,7 +305,7 @@ class ContainerService:
             command: Shell command to execute.
 
         Returns:
-            Command output as string.
+            CommandResult with exit_code and output.
 
         Raises:
             KeyError: If no container exists for project.
@@ -320,7 +320,10 @@ class ContainerService:
             user="claude",
         )
 
-        return output.decode("utf-8", errors="replace")
+        return CommandResult(
+            exit_code=exit_code,
+            output=output.decode("utf-8", errors="replace"),
+        )
 
     def get_container_id(self, project_id: str) -> str | None:
         """Get container ID for a project.

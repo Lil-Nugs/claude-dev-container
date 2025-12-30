@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.models import ExecutionResult, ExecutionState, ProgressInfo
+from app.models import CommandResult, ExecutionResult, ExecutionState, ProgressInfo
 
 
 class TestWorkOnBeadAPI:
@@ -253,9 +253,9 @@ class TestPushPRAPI:
                 with patch(
                     "app.main.container_service.exec_command",
                     side_effect=[
-                        "feature/my-branch\n",  # git rev-parse
-                        "Branch pushed successfully\n",  # git push
-                        "https://github.com/org/repo/pull/123\n",  # gh pr create
+                        CommandResult(exit_code=0, output="feature/my-branch\n"),  # git rev-parse
+                        CommandResult(exit_code=0, output="Branch pushed successfully\n"),  # git push
+                        CommandResult(exit_code=0, output="https://github.com/org/repo/pull/123\n"),  # gh pr create
                     ],
                 ):
                     response = client.post("/api/projects/test-project/push-pr")
@@ -276,9 +276,9 @@ class TestPushPRAPI:
                 with patch(
                     "app.main.container_service.exec_command",
                     side_effect=[
-                        "feature/my-branch\n",
-                        "Branch pushed successfully\n",
-                        "https://github.com/org/repo/pull/124\n",
+                        CommandResult(exit_code=0, output="feature/my-branch\n"),
+                        CommandResult(exit_code=0, output="Branch pushed successfully\n"),
+                        CommandResult(exit_code=0, output="https://github.com/org/repo/pull/124\n"),
                     ],
                 ) as mock_exec:
                     response = client.post(
@@ -334,9 +334,9 @@ class TestPushPRAPI:
                 with patch(
                     "app.main.container_service.exec_command",
                     side_effect=[
-                        "feature/my-branch\n",
-                        "Branch pushed successfully\n",
-                        "https://github.com/org/repo/pull/125\n",
+                        CommandResult(exit_code=0, output="feature/my-branch\n"),
+                        CommandResult(exit_code=0, output="Branch pushed successfully\n"),
+                        CommandResult(exit_code=0, output="https://github.com/org/repo/pull/125\n"),
                     ],
                 ) as mock_exec:
                     response = client.post(
@@ -366,9 +366,9 @@ class TestPushPRAPI:
                 with patch(
                     "app.main.container_service.exec_command",
                     side_effect=[
-                        f"{malicious_branch}\n",  # git rev-parse returns malicious branch
-                        "Branch pushed successfully\n",  # git push
-                        "https://github.com/org/repo/pull/126\n",  # gh pr create
+                        CommandResult(exit_code=0, output=f"{malicious_branch}\n"),  # git rev-parse returns malicious branch
+                        CommandResult(exit_code=0, output="Branch pushed successfully\n"),  # git push
+                        CommandResult(exit_code=0, output="https://github.com/org/repo/pull/126\n"),  # gh pr create
                     ],
                 ) as mock_exec:
                     response = client.post("/api/projects/test-project/push-pr")
@@ -383,6 +383,88 @@ class TestPushPRAPI:
         # Verify the branch name is still returned correctly
         data = response.json()
         assert data["branch"] == malicious_branch
+
+    def test_push_pr_git_push_failure_returns_500(
+        self,
+        client: TestClient,
+        mock_project: Mock,
+    ) -> None:
+        """POST /api/projects/{id}/push-pr returns 500 when git push fails."""
+        with patch("app.main.project_service.get_project", return_value=mock_project):
+            with patch("app.main.container_service.ensure_container", return_value="container-123"):
+                with patch(
+                    "app.main.container_service.exec_command",
+                    side_effect=[
+                        CommandResult(exit_code=0, output="feature/my-branch\n"),  # git rev-parse succeeds
+                        CommandResult(exit_code=1, output="error: failed to push some refs to 'origin'\n"),  # git push fails
+                    ],
+                ):
+                    response = client.post("/api/projects/test-project/push-pr")
+
+        assert response.status_code == 500
+        assert "Git push failed" in response.json()["detail"]
+        assert "failed to push some refs" in response.json()["detail"]
+
+    def test_push_pr_does_not_create_pr_if_push_failed(
+        self,
+        client: TestClient,
+        mock_project: Mock,
+    ) -> None:
+        """POST /api/projects/{id}/push-pr does not attempt PR creation if push failed."""
+        with patch("app.main.project_service.get_project", return_value=mock_project):
+            with patch("app.main.container_service.ensure_container", return_value="container-123"):
+                with patch(
+                    "app.main.container_service.exec_command",
+                    side_effect=[
+                        CommandResult(exit_code=0, output="feature/my-branch\n"),  # git rev-parse succeeds
+                        CommandResult(exit_code=128, output="fatal: Could not read from remote repository.\n"),  # git push fails
+                    ],
+                ) as mock_exec:
+                    response = client.post("/api/projects/test-project/push-pr")
+
+        assert response.status_code == 500
+        # Verify only 2 calls were made (rev-parse and push), not the 3rd (pr create)
+        assert mock_exec.call_count == 2
+
+    def test_push_pr_branch_name_failure_returns_500(
+        self,
+        client: TestClient,
+        mock_project: Mock,
+    ) -> None:
+        """POST /api/projects/{id}/push-pr returns 500 when getting branch name fails."""
+        with patch("app.main.project_service.get_project", return_value=mock_project):
+            with patch("app.main.container_service.ensure_container", return_value="container-123"):
+                with patch(
+                    "app.main.container_service.exec_command",
+                    side_effect=[
+                        CommandResult(exit_code=128, output="fatal: not a git repository\n"),  # git rev-parse fails
+                    ],
+                ):
+                    response = client.post("/api/projects/test-project/push-pr")
+
+        assert response.status_code == 500
+        assert "Failed to get branch name" in response.json()["detail"]
+
+    def test_push_pr_pr_creation_failure_returns_500(
+        self,
+        client: TestClient,
+        mock_project: Mock,
+    ) -> None:
+        """POST /api/projects/{id}/push-pr returns 500 when PR creation fails."""
+        with patch("app.main.project_service.get_project", return_value=mock_project):
+            with patch("app.main.container_service.ensure_container", return_value="container-123"):
+                with patch(
+                    "app.main.container_service.exec_command",
+                    side_effect=[
+                        CommandResult(exit_code=0, output="feature/my-branch\n"),  # git rev-parse succeeds
+                        CommandResult(exit_code=0, output="Branch pushed successfully\n"),  # git push succeeds
+                        CommandResult(exit_code=1, output="pull request create failed: a]pull request already exists\n"),  # gh pr create fails
+                    ],
+                ):
+                    response = client.post("/api/projects/test-project/push-pr")
+
+        assert response.status_code == 500
+        assert "PR creation failed" in response.json()["detail"]
 
 
 class TestProgressAPI:

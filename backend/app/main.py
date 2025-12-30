@@ -186,14 +186,24 @@ async def push_and_create_pr(
 
     try:
         # Get current branch name
-        branch_output = container_service.exec_command(
+        branch_result = container_service.exec_command(
             project_id, "git rev-parse --abbrev-ref HEAD"
         )
-        branch = branch_output.strip()
+        if branch_result.exit_code != 0:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to get branch name: {branch_result.output}",
+            )
+        branch = branch_result.output.strip()
 
         # Push to remote
         safe_branch = shlex.quote(branch)
-        push_output = container_service.exec_command(project_id, f"git push -u origin {safe_branch}")
+        push_result = container_service.exec_command(project_id, f"git push -u origin {safe_branch}")
+        if push_result.exit_code != 0:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Git push failed: {push_result.output}",
+            )
 
         # Create PR with gh CLI
         pr_title = request.title if request and request.title else ""
@@ -203,23 +213,30 @@ async def push_and_create_pr(
         else:
             pr_cmd = "gh pr create --fill"
 
-        pr_output = container_service.exec_command(project_id, pr_cmd)
+        pr_result = container_service.exec_command(project_id, pr_cmd)
+        if pr_result.exit_code != 0:
+            raise HTTPException(
+                status_code=500,
+                detail=f"PR creation failed: {pr_result.output}",
+            )
 
         # Extract PR URL from output (gh pr create outputs the URL)
         pr_url = ""
-        for line in pr_output.strip().split("\n"):
+        for line in pr_result.output.strip().split("\n"):
             if "github.com" in line and "/pull/" in line:
                 pr_url = line.strip()
                 break
 
         return {
             "branch": branch,
-            "push_output": push_output,
-            "pr_output": pr_output,
+            "push_output": push_result.output,
+            "pr_output": pr_result.output,
             "pr_url": pr_url,
         }
     except KeyError:
         raise HTTPException(status_code=500, detail="Container not available")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Push/PR creation failed: {e}")
 
