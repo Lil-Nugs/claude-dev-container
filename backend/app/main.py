@@ -1,5 +1,7 @@
 """FastAPI application for Claude Dev Container."""
 
+import shlex
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Literal
@@ -195,7 +197,8 @@ async def push_and_create_pr(
         # Create PR with gh CLI
         pr_title = request.title if request and request.title else ""
         if pr_title:
-            pr_cmd = f'gh pr create --title "{pr_title}" --fill'
+            safe_title = shlex.quote(pr_title)
+            pr_cmd = f"gh pr create --title {safe_title} --fill"
         else:
             pr_cmd = "gh pr create --fill"
 

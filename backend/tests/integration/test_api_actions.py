@@ -320,6 +320,38 @@ class TestPushPRAPI:
         assert response.status_code == 500
         assert "Container not available" in response.json()["detail"]
 
+    def test_push_pr_escapes_shell_metacharacters(
+        self,
+        client: TestClient,
+        mock_project: Mock,
+    ) -> None:
+        """POST /api/projects/{id}/push-pr properly escapes shell metacharacters in title."""
+        # Title with shell metacharacters that could be exploited for injection
+        malicious_title = 'Fix bug"; rm -rf / #'
+
+        with patch("app.main.project_service.get_project", return_value=mock_project):
+            with patch("app.main.container_service.ensure_container", return_value="container-123"):
+                with patch(
+                    "app.main.container_service.exec_command",
+                    side_effect=[
+                        "feature/my-branch\n",
+                        "Branch pushed successfully\n",
+                        "https://github.com/org/repo/pull/125\n",
+                    ],
+                ) as mock_exec:
+                    response = client.post(
+                        "/api/projects/test-project/push-pr",
+                        json={"title": malicious_title},
+                    )
+
+        assert response.status_code == 200
+        # Verify the command was properly escaped - shlex.quote wraps in single quotes
+        calls = mock_exec.call_args_list
+        pr_cmd = calls[2][0][1]
+        # shlex.quote wraps strings with shell metacharacters in single quotes
+        # Expected: gh pr create --title 'Fix bug"; rm -rf / #' --fill
+        assert pr_cmd == "gh pr create --title 'Fix bug\"; rm -rf / #' --fill"
+
 
 class TestProgressAPI:
     """Integration tests for GET /api/projects/{project_id}/progress endpoint."""
