@@ -228,13 +228,18 @@ class BeadsService:
             status: Optional status filter (open, in_progress, closed).
 
         Returns:
-            List of Bead objects.
+            List of Bead objects. Empty list if bd command fails.
         """
         args = ["list"]
         if status:
             args.extend(["--status", status])
 
-        result = self._run_bd_command(args)
+        try:
+            result = self._run_bd_command(args)
+        except RuntimeError as e:
+            logger.error("Failed to list beads: %s", e)
+            return []
+
         if result.returncode != 0:
             return []
 
@@ -248,9 +253,14 @@ class BeadsService:
             bead_id: The bead identifier.
 
         Returns:
-            Bead if found, None otherwise.
+            Bead if found, None if not found or bd command fails.
         """
-        result = self._run_bd_command(["show", bead_id])
+        try:
+            result = self._run_bd_command(["show", bead_id])
+        except RuntimeError as e:
+            logger.error("Failed to get bead %s: %s", bead_id, e)
+            return None
+
         if result.returncode != 0:
             return None
 
@@ -264,9 +274,14 @@ class BeadsService:
         """Get beads that are ready to work on (no blockers).
 
         Returns:
-            List of ready Bead objects.
+            List of ready Bead objects. Empty list if bd command fails.
         """
-        result = self._run_bd_command(["ready"])
+        try:
+            result = self._run_bd_command(["ready"])
+        except RuntimeError as e:
+            logger.error("Failed to get ready beads: %s", e)
+            return []
+
         if result.returncode != 0:
             return []
 
@@ -281,7 +296,12 @@ class BeadsService:
             status: New status value (open, in_progress).
 
         Returns:
-            True if update succeeded, False otherwise.
+            True if update succeeded, False if failed or bd command fails.
         """
-        result = self._run_bd_command(["update", bead_id, f"--status={status}"])
+        try:
+            result = self._run_bd_command(["update", bead_id, f"--status={status}"])
+        except RuntimeError as e:
+            logger.error("Failed to update bead %s status: %s", bead_id, e)
+            return False
+
         return result.returncode == 0
