@@ -26,7 +26,7 @@ python3 -m pytest
 ```bash
 cd backend
 source .venv/bin/activate
-python3 -m uvicorn app.main:app --reload
+python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Frontend Development
@@ -40,8 +40,52 @@ npm run test:run
 ### Running frontend dev server
 ```bash
 cd frontend
-npm run dev
+npm run dev -- --host
 ```
+
+## Accessing Dev Servers from Other Machines
+
+Dev servers bind to `0.0.0.0` so they're accessible from other machines on the network.
+
+**Access URLs (replace `<host>` with machine IP or hostname):**
+- Frontend: `http://<host>:5173`
+- Backend API: `http://<host>:8000`
+- Backend docs: `http://<host>:8000/docs`
+
+**Find the machine IP:**
+```bash
+hostname -I | awk '{print $1}'        # Local network
+tailscale ip -4                        # Tailscale (if using)
+```
+
+## Viewing Logs During Manual Testing
+
+### Backend logs (FastAPI/uvicorn)
+Backend logs appear directly in the terminal where uvicorn is running.
+```bash
+# Run in foreground to see logs
+python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Or run in background and tail logs
+python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 2>&1 | tee backend.log &
+tail -f backend.log
+```
+
+### Docker container logs
+```bash
+# List running containers
+docker ps
+
+# View logs for a container
+docker logs <container_id>
+docker logs -f <container_id>  # Follow/stream logs
+
+# View logs with timestamps
+docker logs -t <container_id>
+```
+
+### Frontend dev server logs
+Frontend logs appear in the terminal running `npm run dev`. Browser console (F12) shows client-side errors.
 
 ## Beads Workflow
 - Use `bd` commands for issue tracking
