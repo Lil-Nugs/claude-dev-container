@@ -1,7 +1,8 @@
 """FastAPI application for Claude Dev Container."""
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Literal
 
 from app.models import (
     Project,
@@ -69,7 +70,13 @@ async def get_project(project_id: str) -> Project:
 
 
 @app.get("/api/projects/{project_id}/beads")
-async def list_beads(project_id: str, status: str | None = None) -> list[Bead]:
+async def list_beads(
+    project_id: str,
+    status: Literal["open", "in_progress", "closed"] | None = Query(
+        default=None,
+        description="Filter beads by status (open, in_progress, closed)",
+    ),
+) -> list[Bead]:
     """List beads for a project (calls bd list)."""
     project = project_service.get_project(project_id)
     if not project:

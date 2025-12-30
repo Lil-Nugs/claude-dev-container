@@ -157,3 +157,67 @@ class TestBeadsAPI:
 
         assert response.status_code == 200
         assert response.json() == []
+
+    # =========================================================================
+    # Status Filter Validation Tests
+    # =========================================================================
+
+    def test_list_beads_invalid_status_returns_422(
+        self, client: TestClient, mock_workspace: Path
+    ) -> None:
+        """GET /api/projects/{id}/beads?status=invalid returns 422."""
+        with patch("app.main.project_service.workspace_path", mock_workspace):
+            response = client.get(
+                "/api/projects/project-with-beads/beads?status=invalid"
+            )
+
+        assert response.status_code == 422
+        error_detail = response.json()["detail"]
+        assert any("status" in str(err).lower() for err in error_detail)
+
+    def test_list_beads_invalid_status_random_string(
+        self, client: TestClient, mock_workspace: Path
+    ) -> None:
+        """GET /api/projects/{id}/beads?status=foobar returns 422."""
+        with patch("app.main.project_service.workspace_path", mock_workspace):
+            response = client.get(
+                "/api/projects/project-with-beads/beads?status=foobar"
+            )
+
+        assert response.status_code == 422
+
+    def test_list_beads_valid_status_in_progress(
+        self, client: TestClient, mock_workspace: Path
+    ) -> None:
+        """GET /api/projects/{id}/beads?status=in_progress returns 200."""
+        mock_result = Mock(
+            returncode=0,
+            stdout="[P1] [in_progress] [task] proj-001: In progress task",
+            stderr="",
+        )
+
+        with patch("app.main.project_service.workspace_path", mock_workspace):
+            with patch("app.services.beads.subprocess.run", return_value=mock_result):
+                response = client.get(
+                    "/api/projects/project-with-beads/beads?status=in_progress"
+                )
+
+        assert response.status_code == 200
+
+    def test_list_beads_valid_status_closed(
+        self, client: TestClient, mock_workspace: Path
+    ) -> None:
+        """GET /api/projects/{id}/beads?status=closed returns 200."""
+        mock_result = Mock(
+            returncode=0,
+            stdout="[P1] [closed] [task] proj-001: Closed task",
+            stderr="",
+        )
+
+        with patch("app.main.project_service.workspace_path", mock_workspace):
+            with patch("app.services.beads.subprocess.run", return_value=mock_result):
+                response = client.get(
+                    "/api/projects/project-with-beads/beads?status=closed"
+                )
+
+        assert response.status_code == 200
