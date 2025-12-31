@@ -134,7 +134,10 @@ class ContainerService:
         ]
         for claude_bin in claude_paths:
             if claude_bin.exists():
-                volumes[str(claude_bin)] = {"bind": "/usr/local/bin/claude", "mode": "ro"}
+                volumes[str(claude_bin)] = {
+                    "bind": "/usr/local/bin/claude",
+                    "mode": "ro",
+                }
                 break
 
         # Claude config directory

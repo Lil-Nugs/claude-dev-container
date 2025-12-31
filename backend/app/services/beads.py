@@ -69,8 +69,9 @@ class BeadsService:
                 effective_timeout,
                 " ".join(cmd),
             )
+            cmd_str = " ".join(cmd)
             raise RuntimeError(
-                f"bd command timed out after {effective_timeout} seconds: {' '.join(cmd)}"
+                f"bd command timed out after {effective_timeout} seconds: {cmd_str}"
             ) from e
         except OSError as e:
             logger.error("Failed to execute bd command: %s - %s", " ".join(cmd), e)

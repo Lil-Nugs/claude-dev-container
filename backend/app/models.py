@@ -1,7 +1,6 @@
 """Pydantic models for Claude Dev Container."""
 
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -49,7 +48,7 @@ class Bead(BaseModel):
     id: str = Field(..., description="Unique bead identifier")
     title: str = Field(..., description="Bead title")
     status: BeadStatus = Field(..., description="Current status")
-    description: Optional[str] = Field(default=None, description="Bead description")
+    description: str | None = Field(default=None, description="Bead description")
     priority: int = Field(
         default=2, description="Priority level (0-4, lower is higher priority)"
     )
@@ -83,7 +82,7 @@ class AttachInfo(BaseModel):
 class WorkRequest(BaseModel):
     """Request body for work endpoint."""
 
-    context: Optional[str] = Field(
+    context: str | None = Field(
         default=None, description="Additional context for the work"
     )
 
@@ -91,7 +90,7 @@ class WorkRequest(BaseModel):
 class PushPRRequest(BaseModel):
     """Request body for push-pr endpoint."""
 
-    title: Optional[str] = Field(default=None, description="Optional PR title")
+    title: str | None = Field(default=None, description="Optional PR title")
 
 
 class PushPRResponse(BaseModel):

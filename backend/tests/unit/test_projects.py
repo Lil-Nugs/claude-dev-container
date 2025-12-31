@@ -1,10 +1,11 @@
 """Unit tests for project discovery service."""
 
-import pytest
 from pathlib import Path
 
-from app.services.projects import ProjectService
+import pytest
+
 from app.models import Project
+from app.services.projects import ProjectService
 
 
 class TestProjectService:
@@ -263,15 +264,19 @@ class TestProjectService:
     ) -> None:
         """_is_path_within_workspace returns True for paths inside workspace."""
         valid_path = workspace / "some-project"
-        result = service._is_path_within_workspace(valid_path.resolve(), workspace.resolve())
+        result = service._is_path_within_workspace(
+            valid_path.resolve(), workspace.resolve()
+        )
         assert result is True
 
     def test_is_path_within_workspace_returns_false_for_outside(
         self, workspace: Path, service: ProjectService
     ) -> None:
-        """_is_path_within_workspace returns False for paths outside workspace."""
+        """_is_path_within_workspace returns False for paths outside."""
         outside_path = workspace.parent / "other-dir"
-        result = service._is_path_within_workspace(outside_path.resolve(), workspace.resolve())
+        result = service._is_path_within_workspace(
+            outside_path.resolve(), workspace.resolve()
+        )
         assert result is False
 
     def test_is_path_within_workspace_returns_false_for_traversal(

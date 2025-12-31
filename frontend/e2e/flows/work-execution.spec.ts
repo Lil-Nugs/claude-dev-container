@@ -52,28 +52,28 @@ const mockProgressInfo = {
 
 test.describe("Work Execution Flow", () => {
   test.beforeEach(async ({ page }) => {
-    // Mock basic API endpoints
-    await page.route("/api/projects", async (route) => {
+    // Mock basic API endpoints using ** glob to match full URLs in CI
+    await page.route("**/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads*", async (route) => {
+    await page.route("**/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
-    await page.route("/api/projects/proj-1/progress*", async (route) => {
+    await page.route("**/api/projects/proj-1/progress*", async (route) => {
       await route.fulfill({ json: mockProgressInfo });
     });
 
     // Catch-all for any unmocked API requests
-    await page.route("/api/**", async (route) => {
+    await page.route("**/api/**", async (route) => {
       await route.fulfill({ json: [] });
     });
   });
 
   test("should execute work action on selected bead", async ({ page }) => {
     // Mock successful execution
-    await page.route("/api/projects/proj-1/work/bead-1", async (route) => {
+    await page.route("**/api/projects/proj-1/work/bead-1", async (route) => {
       // Add slight delay to simulate execution
       await new Promise((resolve) => setTimeout(resolve, 100));
       await route.fulfill({ json: mockExecutionResult });
@@ -81,8 +81,14 @@ test.describe("Work Execution Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
+
+    // Wait for bead list to load
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
 
     // Select bead
     await page.click('[data-testid="bead-item"]:first-child');
@@ -101,15 +107,19 @@ test.describe("Work Execution Flow", () => {
 
   test("should show elapsed time during execution", async ({ page }) => {
     // Mock slow execution
-    await page.route("/api/projects/proj-1/work/bead-1", async (route) => {
+    await page.route("**/api/projects/proj-1/work/bead-1", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 3000));
       await route.fulfill({ json: mockExecutionResult });
     });
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
 
     // Click work button
@@ -125,15 +135,19 @@ test.describe("Work Execution Flow", () => {
 
   test("should disable all actions during execution", async ({ page }) => {
     // Mock slow execution
-    await page.route("/api/projects/proj-1/work/bead-1", async (route) => {
+    await page.route("**/api/projects/proj-1/work/bead-1", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       await route.fulfill({ json: mockExecutionResult });
     });
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
 
     // Click work button
@@ -152,14 +166,18 @@ test.describe("Work Execution Flow", () => {
   });
 
   test("should show completed state in output view", async ({ page }) => {
-    await page.route("/api/projects/proj-1/work/bead-1", async (route) => {
+    await page.route("**/api/projects/proj-1/work/bead-1", async (route) => {
       await route.fulfill({ json: mockExecutionResult });
     });
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead, execute
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
     await page.click('[data-testid="action-work"]');
 
@@ -173,14 +191,18 @@ test.describe("Work Execution Flow", () => {
   test("should show blocked state when execution is blocked", async ({
     page,
   }) => {
-    await page.route("/api/projects/proj-1/work/bead-1", async (route) => {
+    await page.route("**/api/projects/proj-1/work/bead-1", async (route) => {
       await route.fulfill({ json: mockBlockedResult });
     });
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead, execute
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
     await page.click('[data-testid="action-work"]');
 
@@ -195,14 +217,18 @@ test.describe("Work Execution Flow", () => {
   });
 
   test("should show failed state when execution fails", async ({ page }) => {
-    await page.route("/api/projects/proj-1/work/bead-1", async (route) => {
+    await page.route("**/api/projects/proj-1/work/bead-1", async (route) => {
       await route.fulfill({ json: mockFailedResult });
     });
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead, execute
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
     await page.click('[data-testid="action-work"]');
 
@@ -215,15 +241,19 @@ test.describe("Work Execution Flow", () => {
 
   test("should show refresh button during execution", async ({ page }) => {
     // Mock slow execution
-    await page.route("/api/projects/proj-1/work/bead-1", async (route) => {
+    await page.route("**/api/projects/proj-1/work/bead-1", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 5000));
       await route.fulfill({ json: mockExecutionResult });
     });
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
 
     // Click work button
@@ -237,14 +267,18 @@ test.describe("Work Execution Flow", () => {
   });
 
   test("should handle network error gracefully", async ({ page }) => {
-    await page.route("/api/projects/proj-1/work/bead-1", async (route) => {
+    await page.route("**/api/projects/proj-1/work/bead-1", async (route) => {
       await route.abort("failed");
     });
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead, execute
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
     await page.click('[data-testid="action-work"]');
 
@@ -261,15 +295,19 @@ test.describe("Work Execution Flow", () => {
   test("should re-enable actions after execution completes", async ({
     page,
   }) => {
-    await page.route("/api/projects/proj-1/work/bead-1", async (route) => {
+    await page.route("**/api/projects/proj-1/work/bead-1", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 500));
       await route.fulfill({ json: mockExecutionResult });
     });
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
 
     // Click work button

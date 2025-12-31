@@ -32,26 +32,30 @@ const mockAttachInfo = {
 
 test.describe("Terminal Access", () => {
   test.beforeEach(async ({ page }) => {
-    await page.route("/api/projects", async (route) => {
+    // Mock API endpoints using ** glob to match full URLs in CI
+    await page.route("**/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads*", async (route) => {
+    await page.route("**/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
-    await page.route("/api/projects/proj-1/attach", async (route) => {
+    await page.route("**/api/projects/proj-1/attach", async (route) => {
       await route.fulfill({ json: mockAttachInfo });
     });
 
     // Catch-all for any unmocked API requests (must be last)
-    await page.route("/api/**", async (route) => {
+    await page.route("**/api/**", async (route) => {
       await route.fulfill({ json: [] });
     });
   });
 
   test("should show terminal modal with command", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
@@ -73,6 +77,9 @@ test.describe("Terminal Access", () => {
   test("should display container ID", async ({ page }) => {
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-terminal"]');
@@ -92,6 +99,9 @@ test.describe("Terminal Access", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-terminal"]');
@@ -109,6 +119,9 @@ test.describe("Terminal Access", () => {
 
   test("should close terminal modal via close button", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
@@ -129,6 +142,9 @@ test.describe("Terminal Access", () => {
   test("should close terminal modal via backdrop click", async ({ page }) => {
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-terminal"]');
@@ -147,6 +163,9 @@ test.describe("Terminal Access", () => {
 
   test("should close terminal modal via escape key", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
@@ -168,12 +187,15 @@ test.describe("Terminal Access", () => {
     page,
   }) => {
     // Delay the response
-    await page.route("/api/projects/proj-1/attach", async (route) => {
+    await page.route("**/api/projects/proj-1/attach", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await route.fulfill({ json: mockAttachInfo });
     });
 
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
@@ -189,7 +211,7 @@ test.describe("Terminal Access", () => {
   });
 
   test("should show error when container not running", async ({ page }) => {
-    await page.route("/api/projects/proj-1/attach", async (route) => {
+    await page.route("**/api/projects/proj-1/attach", async (route) => {
       await route.fulfill({
         status: 404,
         json: { error: "Container not running" },
@@ -197,6 +219,9 @@ test.describe("Terminal Access", () => {
     });
 
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
@@ -213,6 +238,9 @@ test.describe("Terminal Access", () => {
 
   test("should have touch-friendly button sizes", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');

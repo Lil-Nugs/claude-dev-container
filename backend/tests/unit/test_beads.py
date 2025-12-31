@@ -4,8 +4,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from app.services.beads import BeadsService
 from app.models import Bead, BeadStatus, BeadType
+from app.services.beads import BeadsService
 
 
 class TestBeadsService:
@@ -299,7 +299,10 @@ Type: task"""
         """Listing beads returns parsed Bead objects."""
         mock_subprocess.return_value = Mock(
             returncode=0,
-            stdout="proj-001 [P1] [task] open - Task one\nproj-002 [P2] [bug] in_progress - Bug fix",
+            stdout=(
+                "proj-001 [P1] [task] open - Task one\n"
+                "proj-002 [P2] [bug] in_progress - Bug fix"
+            ),
             stderr="",
         )
 

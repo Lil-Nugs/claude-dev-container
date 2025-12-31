@@ -16,7 +16,8 @@ class ProjectService:
         """Initialize the project service.
 
         Args:
-            workspace_path: Optional path to workspace. Defaults to settings.workspace_path.
+            workspace_path: Optional path to workspace.
+                Defaults to settings.workspace_path.
         """
         self.workspace_path = workspace_path or settings.workspace_path
 

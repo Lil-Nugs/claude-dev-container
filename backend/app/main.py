@@ -1,28 +1,27 @@
 """FastAPI application for Claude Dev Container."""
 
 import shlex
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from typing import Literal
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.models import (
-    Project,
+    AttachInfo,
     Bead,
     ExecutionResult,
     ProgressInfo,
-    AttachInfo,
-    WorkRequest,
+    Project,
     PushPRRequest,
     PushPRResponse,
+    WorkRequest,
 )
-from app.services.projects import ProjectService
 from app.services.beads import BeadsService
 from app.services.containers import ContainerService
+from app.services.projects import ProjectService
 
 # Initialize rate limiter with in-memory storage (default)
 limiter = Limiter(key_func=get_remote_address)
@@ -90,9 +89,11 @@ async def get_project(request: Request, project_id: str) -> Project:
 async def list_beads(
     request: Request,
     project_id: str,
-    status: Literal["open", "in_progress", "blocked", "deferred", "closed"] | None = Query(
+    status: (
+        Literal["open", "in_progress", "blocked", "deferred", "closed"] | None
+    ) = Query(
         default=None,
-        description="Filter beads by status (open, in_progress, blocked, deferred, closed)",
+        description="Filter by status",
     ),
 ) -> list[Bead]:
     """List beads for a project (calls bd list)."""
@@ -100,7 +101,9 @@ async def list_beads(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     if not project.has_beads:
-        raise HTTPException(status_code=400, detail="Project does not have beads initialized")
+        raise HTTPException(
+            status_code=400, detail="Project does not have beads initialized"
+        )
 
     beads_service = BeadsService(project_path=project.path)
     return beads_service.list_beads(status=status)
@@ -131,7 +134,9 @@ async def work_on_bead(
 
     # Verify project has beads
     if not project.has_beads:
-        raise HTTPException(status_code=400, detail="Project does not have beads initialized")
+        raise HTTPException(
+            status_code=400, detail="Project does not have beads initialized"
+        )
 
     # Ensure container is running
     try:
@@ -141,7 +146,12 @@ async def work_on_bead(
 
     # Build prompt for Claude
     # Use direct prompt instead of skill (skills may not be available in container)
-    prompt = f"Work on the bead/issue with ID: {bead_id}\n\nRun 'bd show {bead_id}' to see the issue details, then implement the required changes. Follow the project's coding conventions and run tests if applicable."
+    prompt = (
+        f"Work on the bead/issue with ID: {bead_id}\n\n"
+        f"Run 'bd show {bead_id}' to see the issue details, then implement "
+        "the required changes. Follow the project's coding conventions and "
+        "run tests if applicable."
+    )
     if body and body.context:
         prompt += f"\n\nAdditional context from user: {body.context}"
 
@@ -176,7 +186,11 @@ async def review_work(request: Request, project_id: str) -> ExecutionResult:
 
     # Execute Claude review in container
     # Use direct prompt instead of skill (skills may not be available in container)
-    review_prompt = "Review the recent implementation changes in this project. Run 'git diff' to see changes, check for bugs, security issues, and code quality. Summarize your findings."
+    review_prompt = (
+        "Review the recent implementation changes in this project. "
+        "Run 'git diff' to see changes, check for bugs, security issues, "
+        "and code quality. Summarize your findings."
+    )
     try:
         result = container_service.exec_claude(project_id, review_prompt)
         return result
@@ -222,7 +236,8 @@ async def push_and_create_pr(
 
         # Push to remote
         safe_branch = shlex.quote(branch)
-        push_result = container_service.exec_command(project_id, f"git push -u origin {safe_branch}")
+        push_cmd = f"git push -u origin {safe_branch}"
+        push_result = container_service.exec_command(project_id, push_cmd)
         if push_result.exit_code != 0:
             raise HTTPException(
                 status_code=500,

@@ -8,7 +8,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Smoke Tests", () => {
   test.beforeEach(async ({ page }) => {
     // Mock API to prevent proxy errors - smoke tests don't need real API data
-    await page.route("/api/**", async (route) => {
+    await page.route("**/api/**", async (route) => {
       await route.fulfill({ json: [] });
     });
   });
