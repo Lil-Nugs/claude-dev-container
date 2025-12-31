@@ -188,6 +188,7 @@ class ContainerService:
                     cmd=["claude", "--dangerously-skip-permissions", "-p", prompt],
                     workdir="/workspace",
                     user="claude",
+                    environment={"HOME": "/home/claude"},
                 )
 
                 # Start execution with streaming
@@ -323,6 +324,7 @@ class ContainerService:
             cmd=["bash", "-c", command],
             workdir="/workspace",
             user="claude",
+            environment={"HOME": "/home/claude"},
         )
 
         return CommandResult(
