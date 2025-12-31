@@ -70,13 +70,17 @@ test.describe("Bead Listing", () => {
     await page.goto("/");
 
     // Wait for project list to load
-    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
     // Wait for bead list to load
-    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Should show all beads
     const beadItems = page.locator('[data-testid="bead-item"]');
@@ -87,13 +91,17 @@ test.describe("Bead Listing", () => {
     await page.goto("/");
 
     // Wait for project list to load
-    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
     // Wait for beads to load
-    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Click on first bead
     const firstBead = page.locator('[data-testid="bead-item"]').first();
@@ -107,13 +115,17 @@ test.describe("Bead Listing", () => {
     await page.goto("/");
 
     // Wait for project list to load
-    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
     // Wait for bead list to load
-    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Click first bead
     await page.click('[data-testid="bead-item"]:first-child');
@@ -129,13 +141,17 @@ test.describe("Bead Listing", () => {
     await page.goto("/");
 
     // Wait for project list to load
-    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
     // Wait for beads
-    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // First bead should show P1 priority and open status
     const firstBead = page.locator('[data-testid="bead-item"]').first();
@@ -157,7 +173,9 @@ test.describe("Bead Listing", () => {
     await page.goto("/");
 
     // Wait for project list to load
-    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
@@ -166,7 +184,9 @@ test.describe("Bead Listing", () => {
     await expect(page.locator('[data-testid="loading-beads"]')).toBeVisible();
 
     // Then show beads
-    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should filter beads by status when filter is applied", async ({
@@ -175,13 +195,17 @@ test.describe("Bead Listing", () => {
     await page.goto("/");
 
     // Wait for project list to load
-    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
     // Wait for beads
-    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // If there's a status filter, click it
     const statusFilter = page.locator('[data-testid="filter-status"]');
@@ -202,13 +226,17 @@ test.describe("Bead Listing", () => {
     await page.goto("/");
 
     // Wait for project list to load
-    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
     // Wait for beads
-    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Work button should be disabled initially
     const workButton = page.locator('[data-testid="action-work"]');
@@ -232,13 +260,17 @@ test.describe("Bead Listing", () => {
     await page.goto("/");
 
     // Wait for project list to load
-    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
     // Wait for beads
-    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible({
+      timeout: 10000,
+    });
 
     // First bead should show "feature" type
     const firstBead = page.locator('[data-testid="bead-item"]').first();

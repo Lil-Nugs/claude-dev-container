@@ -220,8 +220,13 @@ class TestReviewWorkAPI:
         data = response.json()
         assert "Review completed" in data["output"]
         assert data["state"] == "completed"
-        # Verify review command was called
-        mock_exec.assert_called_once_with("test-project", "/review-implementation")
+        # Verify review command was called with the direct prompt
+        expected_prompt = (
+            "Review the recent implementation changes in this project. "
+            "Run 'git diff' to see changes, check for bugs, security issues, "
+            "and code quality. Summarize your findings."
+        )
+        mock_exec.assert_called_once_with("test-project", expected_prompt)
 
     def test_review_work_project_not_found(
         self,
