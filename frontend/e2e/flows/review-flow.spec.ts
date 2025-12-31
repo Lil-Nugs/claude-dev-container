@@ -84,6 +84,9 @@ test.describe("Review Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
@@ -110,6 +113,9 @@ test.describe("Review Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and run review
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-review"]');
@@ -130,6 +136,9 @@ test.describe("Review Flow", () => {
     });
 
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and run review
     await page.click('[data-testid="project-card"]:first-child');
@@ -156,6 +165,9 @@ test.describe("Review Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and start review
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-review"]');
@@ -173,8 +185,12 @@ test.describe("Review Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
 
     // Start review
@@ -202,6 +218,9 @@ test.describe("Review Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and run review
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-review"]');
@@ -223,8 +242,12 @@ test.describe("Review Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
 
     // Run review

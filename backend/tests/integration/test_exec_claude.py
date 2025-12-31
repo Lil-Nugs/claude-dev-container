@@ -281,7 +281,9 @@ class TestExecClaudeIntegration:
             container_service.remove_container(project_id)
 
 
-@pytest.mark.skipif(docker_available, reason="Test only runs when Docker is not available")
+@pytest.mark.skipif(
+    docker_available, reason="Test only runs when Docker is not available"
+)
 class TestDockerUnavailable:
     """Tests for behavior when Docker is not available."""
 

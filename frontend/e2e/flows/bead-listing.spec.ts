@@ -69,6 +69,9 @@ test.describe("Bead Listing", () => {
   test("should display all beads for selected project", async ({ page }) => {
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
@@ -82,6 +85,9 @@ test.describe("Bead Listing", () => {
 
   test("should highlight selected bead", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
@@ -99,6 +105,9 @@ test.describe("Bead Listing", () => {
 
   test("should display bead details when selected", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
@@ -118,6 +127,9 @@ test.describe("Bead Listing", () => {
 
   test("should show bead priority and status badges", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
@@ -144,6 +156,9 @@ test.describe("Bead Listing", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
@@ -158,6 +173,9 @@ test.describe("Bead Listing", () => {
     page,
   }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
@@ -182,6 +200,9 @@ test.describe("Bead Listing", () => {
 
   test("should enable work button when bead is selected", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
@@ -209,6 +230,9 @@ test.describe("Bead Listing", () => {
 
   test("should display bead type badge", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project
     await page.click('[data-testid="project-card"]:first-child');

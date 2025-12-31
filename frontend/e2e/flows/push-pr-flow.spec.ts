@@ -80,6 +80,9 @@ test.describe("Push & PR Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
@@ -107,6 +110,9 @@ test.describe("Push & PR Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and push
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-push-pr"]');
@@ -124,6 +130,9 @@ test.describe("Push & PR Flow", () => {
     });
 
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and push
     await page.click('[data-testid="project-card"]:first-child');
@@ -146,6 +155,9 @@ test.describe("Push & PR Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and push
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-push-pr"]');
@@ -166,6 +178,9 @@ test.describe("Push & PR Flow", () => {
     });
 
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and push
     await page.click('[data-testid="project-card"]:first-child');
@@ -199,8 +214,12 @@ test.describe("Push & PR Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
 
     // Start push
@@ -228,6 +247,9 @@ test.describe("Push & PR Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and push
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-push-pr"]');
@@ -249,6 +271,9 @@ test.describe("Push & PR Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and push
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-push-pr"]');
@@ -266,8 +291,12 @@ test.describe("Push & PR Flow", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and bead
     await page.click('[data-testid="project-card"]:first-child');
+    await expect(page.locator('[data-testid="bead-list"]')).toBeVisible();
     await page.click('[data-testid="bead-item"]:first-child');
 
     // Push

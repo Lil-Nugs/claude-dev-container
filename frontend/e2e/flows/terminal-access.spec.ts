@@ -53,6 +53,9 @@ test.describe("Terminal Access", () => {
   test("should show terminal modal with command", async ({ page }) => {
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project
     await page.click('[data-testid="project-card"]:first-child');
 
@@ -73,6 +76,9 @@ test.describe("Terminal Access", () => {
   test("should display container ID", async ({ page }) => {
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-terminal"]');
@@ -92,6 +98,9 @@ test.describe("Terminal Access", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-terminal"]');
@@ -109,6 +118,9 @@ test.describe("Terminal Access", () => {
 
   test("should close terminal modal via close button", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
@@ -129,6 +141,9 @@ test.describe("Terminal Access", () => {
   test("should close terminal modal via backdrop click", async ({ page }) => {
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-terminal"]');
@@ -147,6 +162,9 @@ test.describe("Terminal Access", () => {
 
   test("should close terminal modal via escape key", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
@@ -175,6 +193,9 @@ test.describe("Terminal Access", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-terminal"]');
@@ -198,6 +219,9 @@ test.describe("Terminal Access", () => {
 
     await page.goto("/");
 
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
+
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
     await page.click('[data-testid="action-terminal"]');
@@ -213,6 +237,9 @@ test.describe("Terminal Access", () => {
 
   test("should have touch-friendly button sizes", async ({ page }) => {
     await page.goto("/");
+
+    // Wait for project list to load
+    await expect(page.locator('[data-testid="project-list"]')).toBeVisible();
 
     // Select project and open terminal
     await page.click('[data-testid="project-card"]:first-child');
