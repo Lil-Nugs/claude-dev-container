@@ -63,22 +63,23 @@ Overall: **Changes Requested**`,
 
 test.describe("Review Flow", () => {
   test.beforeEach(async ({ page }) => {
-    await page.route("/api/projects", async (route) => {
+    // Mock API endpoints using ** glob to match full URLs in CI
+    await page.route("**/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads*", async (route) => {
+    await page.route("**/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
     // Catch-all for any unmocked API requests
-    await page.route("/api/**", async (route) => {
+    await page.route("**/api/**", async (route) => {
       await route.fulfill({ json: [] });
     });
   });
 
   test("should execute review action", async ({ page }) => {
-    await page.route("/api/projects/proj-1/review", async (route) => {
+    await page.route("**/api/projects/proj-1/review", async (route) => {
       await route.fulfill({ json: mockReviewResult });
     });
 
@@ -107,7 +108,7 @@ test.describe("Review Flow", () => {
   });
 
   test("should show review output with recommendations", async ({ page }) => {
-    await page.route("/api/projects/proj-1/review", async (route) => {
+    await page.route("**/api/projects/proj-1/review", async (route) => {
       await route.fulfill({ json: mockReviewResult });
     });
 
@@ -131,7 +132,7 @@ test.describe("Review Flow", () => {
   });
 
   test("should show critical issues in review", async ({ page }) => {
-    await page.route("/api/projects/proj-1/review", async (route) => {
+    await page.route("**/api/projects/proj-1/review", async (route) => {
       await route.fulfill({ json: mockReviewWithIssues });
     });
 
@@ -158,7 +159,7 @@ test.describe("Review Flow", () => {
   });
 
   test("should show elapsed time during review", async ({ page }) => {
-    await page.route("/api/projects/proj-1/review", async (route) => {
+    await page.route("**/api/projects/proj-1/review", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 3000));
       await route.fulfill({ json: mockReviewResult });
     });
@@ -178,7 +179,7 @@ test.describe("Review Flow", () => {
   });
 
   test("should disable other actions during review", async ({ page }) => {
-    await page.route("/api/projects/proj-1/review", async (route) => {
+    await page.route("**/api/projects/proj-1/review", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       await route.fulfill({ json: mockReviewResult });
     });
@@ -209,7 +210,7 @@ test.describe("Review Flow", () => {
   });
 
   test("should handle review API error", async ({ page }) => {
-    await page.route("/api/projects/proj-1/review", async (route) => {
+    await page.route("**/api/projects/proj-1/review", async (route) => {
       await route.fulfill({
         status: 500,
         json: { error: "Container not running" },
@@ -235,7 +236,7 @@ test.describe("Review Flow", () => {
   });
 
   test("should re-enable actions after review completes", async ({ page }) => {
-    await page.route("/api/projects/proj-1/review", async (route) => {
+    await page.route("**/api/projects/proj-1/review", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 500));
       await route.fulfill({ json: mockReviewResult });
     });

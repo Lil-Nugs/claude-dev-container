@@ -43,12 +43,12 @@ const mockBeads = [
 
 test.describe("Bead Listing", () => {
   test.beforeEach(async ({ page }) => {
-    // Mock API endpoints
-    await page.route("/api/projects", async (route) => {
+    // Mock API endpoints using ** glob to match full URLs in CI
+    await page.route("**/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads*", async (route) => {
+    await page.route("**/api/projects/proj-1/beads*", async (route) => {
       const url = new URL(route.request().url());
       const statusFilter = url.searchParams.get("status");
 
@@ -61,7 +61,7 @@ test.describe("Bead Listing", () => {
     });
 
     // Catch-all for any unmocked API requests
-    await page.route("/api/**", async (route) => {
+    await page.route("**/api/**", async (route) => {
       await route.fulfill({ json: [] });
     });
   });
@@ -165,7 +165,7 @@ test.describe("Bead Listing", () => {
 
   test("should show loading state while fetching beads", async ({ page }) => {
     // Add delay to API response
-    await page.route("/api/projects/proj-1/beads", async (route) => {
+    await page.route("**/api/projects/proj-1/beads", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 500));
       await route.fulfill({ json: mockBeads });
     });

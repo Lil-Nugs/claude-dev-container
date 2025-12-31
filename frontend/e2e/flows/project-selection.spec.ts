@@ -42,21 +42,21 @@ const mockBeads = [
 
 test.describe("Project Selection", () => {
   test.beforeEach(async ({ page }) => {
-    // Mock API endpoints
-    await page.route("/api/projects", async (route) => {
+    // Mock API endpoints using ** glob to match full URLs in CI
+    await page.route("**/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads*", async (route) => {
+    await page.route("**/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
-    await page.route("/api/projects/proj-2/beads*", async (route) => {
+    await page.route("**/api/projects/proj-2/beads*", async (route) => {
       await route.fulfill({ json: [] });
     });
 
     // Catch-all for any unmocked API requests
-    await page.route("/api/**", async (route) => {
+    await page.route("**/api/**", async (route) => {
       await route.fulfill({ json: [] });
     });
   });
@@ -119,7 +119,7 @@ test.describe("Project Selection", () => {
 
   test("should show empty state when no projects exist", async ({ page }) => {
     // Override to return empty
-    await page.route("/api/projects", async (route) => {
+    await page.route("**/api/projects", async (route) => {
       await route.fulfill({ json: [] });
     });
 
@@ -135,7 +135,7 @@ test.describe("Project Selection", () => {
 
   test("should handle API error gracefully", async ({ page }) => {
     // Override to return error
-    await page.route("/api/projects", async (route) => {
+    await page.route("**/api/projects", async (route) => {
       await route.fulfill({
         status: 500,
         json: { error: "Internal server error" },

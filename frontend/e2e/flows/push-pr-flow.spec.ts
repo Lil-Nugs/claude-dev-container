@@ -59,22 +59,23 @@ Creating pull request for feature/implement-x into main in user/test-project`,
 
 test.describe("Push & PR Flow", () => {
   test.beforeEach(async ({ page }) => {
-    await page.route("/api/projects", async (route) => {
+    // Mock API endpoints using ** glob to match full URLs in CI
+    await page.route("**/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads*", async (route) => {
+    await page.route("**/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
     // Catch-all for any unmocked API requests
-    await page.route("/api/**", async (route) => {
+    await page.route("**/api/**", async (route) => {
       await route.fulfill({ json: [] });
     });
   });
 
   test("should create PR and show URL", async ({ page }) => {
-    await page.route("/api/projects/proj-1/push-pr", async (route) => {
+    await page.route("**/api/projects/proj-1/push-pr", async (route) => {
       await route.fulfill({ json: mockPushPRSuccess });
     });
 
@@ -104,7 +105,7 @@ test.describe("Push & PR Flow", () => {
   });
 
   test("should show both push and PR output", async ({ page }) => {
-    await page.route("/api/projects/proj-1/push-pr", async (route) => {
+    await page.route("**/api/projects/proj-1/push-pr", async (route) => {
       await route.fulfill({ json: mockPushPRSuccess });
     });
 
@@ -125,7 +126,7 @@ test.describe("Push & PR Flow", () => {
   });
 
   test("should handle push failure gracefully", async ({ page }) => {
-    await page.route("/api/projects/proj-1/push-pr", async (route) => {
+    await page.route("**/api/projects/proj-1/push-pr", async (route) => {
       await route.fulfill({ json: mockPushPRFailure });
     });
 
@@ -149,7 +150,7 @@ test.describe("Push & PR Flow", () => {
   });
 
   test("should handle nothing to push", async ({ page }) => {
-    await page.route("/api/projects/proj-1/push-pr", async (route) => {
+    await page.route("**/api/projects/proj-1/push-pr", async (route) => {
       await route.fulfill({ json: mockNothingToPush });
     });
 
@@ -173,7 +174,7 @@ test.describe("Push & PR Flow", () => {
   });
 
   test("should show PR link as clickable", async ({ page }) => {
-    await page.route("/api/projects/proj-1/push-pr", async (route) => {
+    await page.route("**/api/projects/proj-1/push-pr", async (route) => {
       await route.fulfill({ json: mockPushPRSuccess });
     });
 
@@ -207,7 +208,7 @@ test.describe("Push & PR Flow", () => {
   });
 
   test("should disable other actions during push", async ({ page }) => {
-    await page.route("/api/projects/proj-1/push-pr", async (route) => {
+    await page.route("**/api/projects/proj-1/push-pr", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       await route.fulfill({ json: mockPushPRSuccess });
     });
@@ -238,7 +239,7 @@ test.describe("Push & PR Flow", () => {
   });
 
   test("should handle API error on push", async ({ page }) => {
-    await page.route("/api/projects/proj-1/push-pr", async (route) => {
+    await page.route("**/api/projects/proj-1/push-pr", async (route) => {
       await route.fulfill({
         status: 500,
         json: { error: "Container not running" },
@@ -264,7 +265,7 @@ test.describe("Push & PR Flow", () => {
   });
 
   test("should show elapsed time during push", async ({ page }) => {
-    await page.route("/api/projects/proj-1/push-pr", async (route) => {
+    await page.route("**/api/projects/proj-1/push-pr", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 3000));
       await route.fulfill({ json: mockPushPRSuccess });
     });
@@ -284,7 +285,7 @@ test.describe("Push & PR Flow", () => {
   });
 
   test("should re-enable actions after push completes", async ({ page }) => {
-    await page.route("/api/projects/proj-1/push-pr", async (route) => {
+    await page.route("**/api/projects/proj-1/push-pr", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 500));
       await route.fulfill({ json: mockPushPRSuccess });
     });

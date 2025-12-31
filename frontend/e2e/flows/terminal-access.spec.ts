@@ -32,20 +32,21 @@ const mockAttachInfo = {
 
 test.describe("Terminal Access", () => {
   test.beforeEach(async ({ page }) => {
-    await page.route("/api/projects", async (route) => {
+    // Mock API endpoints using ** glob to match full URLs in CI
+    await page.route("**/api/projects", async (route) => {
       await route.fulfill({ json: mockProjects });
     });
 
-    await page.route("/api/projects/proj-1/beads*", async (route) => {
+    await page.route("**/api/projects/proj-1/beads*", async (route) => {
       await route.fulfill({ json: mockBeads });
     });
 
-    await page.route("/api/projects/proj-1/attach", async (route) => {
+    await page.route("**/api/projects/proj-1/attach", async (route) => {
       await route.fulfill({ json: mockAttachInfo });
     });
 
     // Catch-all for any unmocked API requests (must be last)
-    await page.route("/api/**", async (route) => {
+    await page.route("**/api/**", async (route) => {
       await route.fulfill({ json: [] });
     });
   });
@@ -186,7 +187,7 @@ test.describe("Terminal Access", () => {
     page,
   }) => {
     // Delay the response
-    await page.route("/api/projects/proj-1/attach", async (route) => {
+    await page.route("**/api/projects/proj-1/attach", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await route.fulfill({ json: mockAttachInfo });
     });
@@ -210,7 +211,7 @@ test.describe("Terminal Access", () => {
   });
 
   test("should show error when container not running", async ({ page }) => {
-    await page.route("/api/projects/proj-1/attach", async (route) => {
+    await page.route("**/api/projects/proj-1/attach", async (route) => {
       await route.fulfill({
         status: 404,
         json: { error: "Container not running" },
