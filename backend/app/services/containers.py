@@ -127,10 +127,18 @@ class ContainerService:
             project_path: {"bind": "/workspace", "mode": "rw"},
         }
 
-        # Claude CLI - mount if exists
-        claude_bin = Path("/usr/local/bin/claude")
-        if claude_bin.exists():
-            volumes[str(claude_bin)] = {"bind": "/usr/local/bin/claude", "mode": "ro"}
+        # Claude CLI - check multiple possible locations
+        claude_paths = [
+            Path("/usr/local/bin/claude"),
+            home / ".local/bin/claude",
+        ]
+        for claude_bin in claude_paths:
+            if claude_bin.exists():
+                volumes[str(claude_bin)] = {
+                    "bind": "/usr/local/bin/claude",
+                    "mode": "ro",
+                }
+                break
 
         # Claude config directory
         claude_config = home / ".claude"
@@ -183,6 +191,7 @@ class ContainerService:
                     cmd=["claude", "--dangerously-skip-permissions", "-p", prompt],
                     workdir="/workspace",
                     user="claude",
+                    environment={"HOME": "/home/claude"},
                 )
 
                 # Start execution with streaming
@@ -318,6 +327,7 @@ class ContainerService:
             cmd=["bash", "-c", command],
             workdir="/workspace",
             user="claude",
+            environment={"HOME": "/home/claude"},
         )
 
         return CommandResult(

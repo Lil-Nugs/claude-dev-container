@@ -16,6 +16,7 @@ from app.models import (
     ProgressInfo,
     Project,
     PushPRRequest,
+    PushPRResponse,
     WorkRequest,
 )
 from app.services.beads import BeadsService
@@ -144,9 +145,15 @@ async def work_on_bead(
         raise HTTPException(status_code=500, detail=f"Failed to start container: {e}")
 
     # Build prompt for Claude
-    prompt = f"/implement-bead {bead_id}"
+    # Use direct prompt instead of skill (skills may not be available in container)
+    prompt = (
+        f"Work on the bead/issue with ID: {bead_id}\n\n"
+        f"Run 'bd show {bead_id}' to see the issue details, then implement "
+        "the required changes. Follow the project's coding conventions and "
+        "run tests if applicable."
+    )
     if body and body.context:
-        prompt += f"\n\nAdditional context: {body.context}"
+        prompt += f"\n\nAdditional context from user: {body.context}"
 
     # Execute Claude in container
     try:
@@ -178,8 +185,14 @@ async def review_work(request: Request, project_id: str) -> ExecutionResult:
         raise HTTPException(status_code=500, detail=f"Failed to start container: {e}")
 
     # Execute Claude review in container
+    # Use direct prompt instead of skill (skills may not be available in container)
+    review_prompt = (
+        "Review the recent implementation changes in this project. "
+        "Run 'git diff' to see changes, check for bugs, security issues, "
+        "and code quality. Summarize your findings."
+    )
     try:
-        result = container_service.exec_claude(project_id, "/review-implementation")
+        result = container_service.exec_claude(project_id, review_prompt)
         return result
     except KeyError:
         raise HTTPException(status_code=500, detail="Container not available")
@@ -193,7 +206,7 @@ async def push_and_create_pr(
     request: Request,
     project_id: str,
     body: PushPRRequest | None = None,
-) -> dict[str, str]:
+) -> PushPRResponse:
     """Git push + gh pr create.
 
     Pushes the current branch to the remote and creates a pull request.
@@ -253,12 +266,12 @@ async def push_and_create_pr(
                 pr_url = line.strip()
                 break
 
-        return {
-            "branch": branch,
-            "push_output": push_result.output,
-            "pr_output": pr_result.output,
-            "pr_url": pr_url,
-        }
+        return PushPRResponse(
+            branch=branch,
+            push_output=push_result.output,
+            pr_output=pr_result.output,
+            pr_url=pr_url,
+        )
     except KeyError:
         raise HTTPException(status_code=500, detail="Container not available")
     except HTTPException:

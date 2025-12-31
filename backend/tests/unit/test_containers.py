@@ -182,6 +182,53 @@ class TestContainerService:
         if claude_path in volumes:
             assert volumes[claude_path]["mode"] == "ro"
 
+    def test_get_volume_mounts_finds_claude_in_local_bin(
+        self, service: ContainerService, tmp_path: Path
+    ) -> None:
+        """Volume mounts find Claude CLI in ~/.local/bin when not in /usr/local/bin."""
+        # Create ~/.local/bin/claude in tmp_path
+        local_bin_claude = tmp_path / ".local" / "bin" / "claude"
+        local_bin_claude.parent.mkdir(parents=True)
+        local_bin_claude.touch()
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            volumes = service._get_volume_mounts("/path/to/project")
+
+        # Should mount the ~/.local/bin/claude path
+        assert str(local_bin_claude) in volumes
+        assert volumes[str(local_bin_claude)]["bind"] == "/usr/local/bin/claude"
+        assert volumes[str(local_bin_claude)]["mode"] == "ro"
+        # /usr/local/bin/claude should NOT be in volumes (doesn't exist)
+        assert "/usr/local/bin/claude" not in volumes
+
+    def test_get_volume_mounts_prefers_usr_local_bin_claude(
+        self, service: ContainerService, tmp_path: Path
+    ) -> None:
+        """Volume mounts prefer /usr/local/bin/claude over ~/.local/bin/claude."""
+        # Create ~/.local/bin/claude in tmp_path
+        local_bin_claude = tmp_path / ".local" / "bin" / "claude"
+        local_bin_claude.parent.mkdir(parents=True)
+        local_bin_claude.touch()
+
+        # Mock /usr/local/bin/claude to exist
+        original_exists = Path.exists
+
+        def mock_exists(self):
+            if str(self) == "/usr/local/bin/claude":
+                return True
+            return original_exists(self)
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            with patch.object(Path, "exists", mock_exists):
+                volumes = service._get_volume_mounts("/path/to/project")
+
+        # Should mount /usr/local/bin/claude, NOT ~/.local/bin/claude
+        assert "/usr/local/bin/claude" in volumes
+        assert volumes["/usr/local/bin/claude"]["bind"] == "/usr/local/bin/claude"
+        assert volumes["/usr/local/bin/claude"]["mode"] == "ro"
+        # ~/.local/bin/claude should NOT be mounted
+        assert str(local_bin_claude) not in volumes
+
     def test_get_volume_mounts_includes_claude_config_if_exists(
         self, service: ContainerService, tmp_path: Path
     ) -> None:

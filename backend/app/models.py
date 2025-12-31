@@ -93,6 +93,15 @@ class PushPRRequest(BaseModel):
     title: str | None = Field(default=None, description="Optional PR title")
 
 
+class PushPRResponse(BaseModel):
+    """Response from push-pr endpoint."""
+
+    branch: str = Field(..., description="Branch name that was pushed")
+    push_output: str = Field(..., description="Output from git push command")
+    pr_output: str = Field(..., description="Output from gh pr create command")
+    pr_url: str = Field(..., description="URL of the created pull request")
+
+
 class CommandResult(BaseModel):
     """Result of executing a shell command in a container."""
 
