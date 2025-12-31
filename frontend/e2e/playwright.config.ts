@@ -27,6 +27,8 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    // Block service workers to prevent PWA from interfering with route mocks
+    serviceWorkers: "block",
   },
 
   projects: process.env.CI

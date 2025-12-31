@@ -70,7 +70,8 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
       },
       devOptions: {
-        enabled: true, // Enable PWA in development for testing
+        // Disable PWA in CI to prevent service worker from interfering with E2E test mocks
+        enabled: !process.env.CI,
       },
     }),
   ],
